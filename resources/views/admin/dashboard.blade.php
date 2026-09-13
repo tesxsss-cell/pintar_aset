@@ -51,6 +51,7 @@
         @endforeach
     </section>
 
+
     
     <section class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
         <article class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
