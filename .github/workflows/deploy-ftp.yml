@@ -1,27 +1,51 @@
 name: Deploy Incremental via FTPS ke Namecheap
 
-# Jalan otomatis saat ada push ke main, atau jalankan manual dari tab Actions.
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
-# Cegah dua deploy menulis ke folder production secara bersamaan.
+permissions:
+  contents: read
+
+# Cegah dua deployment menulis ke production secara bersamaan.
 concurrency:
   group: deploy-pos-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Sinkronkan file yang berubah saja
+    name: Build dan sinkronkan file yang berubah
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
 
+      - name: Siapkan Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # npm ci memakai package-lock.json agar hasil instalasi konsisten.
+      - name: Instal dependensi frontend
+        run: npm ci
+
+      # Menghasilkan aset production ke public/build.
+      - name: Build Tailwind CSS dan JavaScript
+        run: npm run build
+
+      - name: Pastikan hasil build tersedia
+        run: test -f public/build/manifest.json
+
+      - name: Hapus penanda Vite development
+        run: rm -f public/hot
+
       # File .ftp-deploy-sync-state.json disimpan di server.
-      # Setelah satu deploy berhasil, hanya file baru/berubah yang akan diupload.
+      # public/build sengaja tidak dikecualikan agar hasil build ikut diunggah.
       - name: Upload perubahan via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -31,22 +55,19 @@ jobs:
           protocol: ftps
           port: 21
           timeout: 300000
-          log-level: standard
+          log-level: verbose
 
-          # Akun FTP khusus harus memiliki root:
+          # Akun FTP harus memiliki root ke folder deployment:
           # /home/clouyogf/public_html/pos
           local-dir: ./
           server-dir: ./
           dangerous-clean-slate: false
           state-name: .ftp-deploy-sync-state.json
 
-          # Pola .gitignore proyek + file runtime yang tidak boleh ditimpa.
-          # Jangan masukkan .ftp-deploy-sync-state.json ke daftar ini.
           exclude: |
             **/.git*
             **/.git*/**
             **/.github/**
-
             *.log
             **/*.log
             .DS_Store
@@ -64,21 +85,17 @@ jobs:
             .vscode/**
             .zed/**
             auth.json
-
             node_modules/**
             **/node_modules/**
             vendor/**
             **/vendor/**
             _ide_helper.php
             **/_ide_helper.php
-
-            public/build/**
             public/fonts-manifest.dev.json
             public/hot
             public/hot/**
             public/storage
             public/storage/**
-
             storage/*.key
             storage/pail/**
             storage/logs/**
@@ -86,7 +103,6 @@ jobs:
             storage/framework/sessions/**
             storage/framework/views/**
             storage/app/**
-
             bootstrap/cache/**
             Homestead.json
             **/Homestead.json
