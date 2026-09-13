@@ -8,8 +8,33 @@ use App\Http\Controllers\PublicAssetController;
 use App\Http\Controllers\QrCodeController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => redirect()->route('admin.login'));
+/*
+|--------------------------------------------------------------------------
+| Pengalihan autentikasi
+|--------------------------------------------------------------------------
+|
+| Middleware auth Laravel mencari route bernama "login" saat sesi pengguna
+| berakhir. Route ini menjadi penghubung ke halaman login admin sehingga
+| pengguna tidak lagi mendapatkan error "Route [login] not defined".
+|
+*/
+Route::get('/login', function () {
+    return auth()->check()
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('admin.login');
+})->name('login');
 
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('admin.dashboard')
+        : redirect()->route('admin.login');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Route publik aset
+|--------------------------------------------------------------------------
+*/
 Route::get('/aset/{asset}', [PublicAssetController::class, 'show'])
     ->name('assets.public');
 
@@ -23,15 +48,26 @@ Route::post('/aset/{asset}/laporkan', [PublicAssetController::class, 'storeRepor
     ->middleware('throttle:10,1')
     ->name('assets.report.store');
 
+/*
+|--------------------------------------------------------------------------
+| Route admin
+|--------------------------------------------------------------------------
+*/
 Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware('guest')->group(function (): void {
-        Route::get('/masuk', [AuthController::class, 'create'])->name('login');
-        Route::post('/masuk', [AuthController::class, 'store'])->name('login.store');
+        Route::get('/masuk', [AuthController::class, 'create'])
+            ->name('login');
+
+        Route::post('/masuk', [AuthController::class, 'store'])
+            ->name('login.store');
     });
 
     Route::middleware('auth')->group(function (): void {
-        Route::post('/keluar', [AuthController::class, 'destroy'])->name('logout');
-        Route::get('/', DashboardController::class)->name('dashboard');
+        Route::post('/keluar', [AuthController::class, 'destroy'])
+            ->name('logout');
+
+        Route::get('/', DashboardController::class)
+            ->name('dashboard');
 
         Route::get('/aset/{asset}/qr.png', [QrCodeController::class, 'png'])
             ->name('assets.qr.png');
