@@ -151,6 +151,13 @@
             <path d="m21 15-5-5L5 20" />
             @break
 
+        @case('trash')
+            <path d="M3 6h18" />
+            <path d="M8 6V4h8v2" />
+            <path d="m19 6-1 15H6L5 6" />
+            <path d="M10 11v5M14 11v5" />
+            @break
+
         @default
             <circle cx="12" cy="12" r="9" />
     @endswitch
