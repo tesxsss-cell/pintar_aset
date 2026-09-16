@@ -21,6 +21,11 @@ Route::get('/', function () {
         : redirect()->route('admin.login');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Route publik aset dan laporan
+|--------------------------------------------------------------------------
+*/
 Route::get('/aset/{asset}', [PublicAssetController::class, 'show'])
     ->name('assets.public');
 
@@ -40,6 +45,11 @@ Route::get('/laporan-terkirim', [PublicAssetController::class, 'reportSubmitted'
 Route::get('/progress-laporan', [PublicAssetController::class, 'reportStatus'])
     ->name('public-reports.index');
 
+/*
+|--------------------------------------------------------------------------
+| Route admin
+|--------------------------------------------------------------------------
+*/
 Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware('guest')->group(function (): void {
         Route::get('/masuk', [AuthController::class, 'create'])
@@ -55,6 +65,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/', DashboardController::class)
             ->name('dashboard');
+
+        Route::get('/aset/cetak-semua-qr', [AssetController::class, 'printAllQr'])
+            ->name('assets.print-qr');
 
         Route::get('/aset/{asset}/qr.png', [QrCodeController::class, 'png'])
             ->name('assets.qr.png');

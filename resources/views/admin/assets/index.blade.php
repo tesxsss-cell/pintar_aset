@@ -4,6 +4,14 @@
 @section('heading', 'Daftar aset')
 
 @section('content')
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-slate-500">Kelola informasi aset dan cetak seluruh label QR dalam format A4.</p>
+        <a class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.print-qr') }}" target="_blank" rel="noopener">
+            <x-icon name="printer" size="18" />
+            Cetak semua QR
+        </a>
+    </div>
+
     <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <form class="grid gap-3 border-b border-slate-200 p-4 sm:grid-cols-[minmax(0,1fr)_12rem_auto] sm:p-5" method="GET">
             <label class="relative block">
@@ -65,18 +73,12 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex justify-end gap-2">
-                                    <a class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="{{ route('admin.assets.show', $asset) }}" title="Lihat detail aset">
-                                        <x-icon name="chevron-right" size="16" />Lihat
-                                    </a>
-                                    <a class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.edit', $asset) }}" title="Edit aset">
-                                        <x-icon name="edit" size="16" />Edit
-                                    </a>
+                                    <a class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="{{ route('admin.assets.show', $asset) }}" title="Lihat detail aset"><x-icon name="chevron-right" size="16" />Lihat</a>
+                                    <a class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.edit', $asset) }}" title="Edit aset"><x-icon name="edit" size="16" />Edit</a>
                                     <form method="POST" action="{{ route('admin.assets.destroy', $asset) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100" type="submit" data-confirm="Hapus aset {{ $asset->name }}? Tindakan ini tidak dapat dibatalkan." title="Hapus aset">
-                                            <x-icon name="trash" size="16" />Hapus
-                                        </button>
+                                        <button class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100" type="submit" data-confirm="Hapus aset {{ $asset->name }}? Tindakan ini tidak dapat dibatalkan." title="Hapus aset"><x-icon name="trash" size="16" />Hapus</button>
                                     </form>
                                 </div>
                             </td>

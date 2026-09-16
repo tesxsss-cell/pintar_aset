@@ -18,7 +18,7 @@ class QrCodeController extends Controller
 {
     public function svg(Asset $asset): Response
     {
-        abort_unless($asset->active, 404);
+        abort_unless($asset->active || auth()->check(), 404);
         $result = (new SvgWriter())->write($this->makeQrCode($asset, 520, 18));
 
         return response($result->getString(), 200, [
@@ -113,7 +113,7 @@ class QrCodeController extends Controller
     private function makeQrCode(Asset $asset, int $size, int $margin): QrCode
     {
         return new QrCode(
-            data: route('assets.public', ['asset' => $asset, 'source' => 'qr']),
+            data: route('assets.public', $asset),
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::High,
             size: $size,

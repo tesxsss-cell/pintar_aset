@@ -128,6 +128,24 @@ class AssetController extends Controller
             ->with('success', 'Aset berhasil dihapus.');
     }
 
+    public function printAllQr(): View
+    {
+        $assets = Asset::query()
+            ->select([
+                'id',
+                'slug',
+                'code',
+                'name',
+                'location',
+                'category',
+                'active',
+            ])
+            ->orderBy('code')
+            ->get();
+
+        return view('admin.assets.print-qr', compact('assets'));
+    }
+
     public function label(Request $request, Asset $asset): View
     {
         $requestedSize = $request->integer('size', 60);
