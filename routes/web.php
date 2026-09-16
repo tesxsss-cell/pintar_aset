@@ -4,20 +4,11 @@ use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ScanTrackingController;
 use App\Http\Controllers\PublicAssetController;
 use App\Http\Controllers\QrCodeController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Pengalihan autentikasi
-|--------------------------------------------------------------------------
-|
-| Middleware auth Laravel mencari route bernama "login" saat sesi pengguna
-| berakhir. Route ini menjadi penghubung ke halaman login admin sehingga
-| pengguna tidak lagi mendapatkan error "Route [login] not defined".
-|
-*/
 Route::get('/login', function () {
     return auth()->check()
         ? redirect()->route('admin.dashboard')
@@ -30,11 +21,6 @@ Route::get('/', function () {
         : redirect()->route('admin.login');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Route publik aset
-|--------------------------------------------------------------------------
-*/
 Route::get('/aset/{asset}', [PublicAssetController::class, 'show'])
     ->name('assets.public');
 
@@ -48,11 +34,12 @@ Route::post('/aset/{asset}/laporkan', [PublicAssetController::class, 'storeRepor
     ->middleware('throttle:10,1')
     ->name('assets.report.store');
 
-/*
-|--------------------------------------------------------------------------
-| Route admin
-|--------------------------------------------------------------------------
-*/
+Route::get('/laporan-terkirim', [PublicAssetController::class, 'reportSubmitted'])
+    ->name('public-reports.submitted');
+
+Route::get('/progress-laporan', [PublicAssetController::class, 'reportStatus'])
+    ->name('public-reports.index');
+
 Route::prefix('admin')->name('admin.')->group(function (): void {
     Route::middleware('guest')->group(function (): void {
         Route::get('/masuk', [AuthController::class, 'create'])
@@ -76,6 +63,9 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
             ->name('assets.label');
 
         Route::resource('assets', AssetController::class);
+
+        Route::get('/tracking-qr', [ScanTrackingController::class, 'index'])
+            ->name('scan-tracking.index');
 
         Route::get('/laporan', [ReportController::class, 'index'])
             ->name('reports.index');

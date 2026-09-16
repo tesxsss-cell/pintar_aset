@@ -9,7 +9,6 @@ on:
 permissions:
   contents: read
 
-# Cegah dua deployment menulis ke production secara bersamaan.
 concurrency:
   group: deploy-pos-production
   cancel-in-progress: false
@@ -23,6 +22,40 @@ jobs:
     steps:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Periksa migration baru
+        id: migration_check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BEFORE="${{ github.event.before }}"
+          CURRENT="${{ github.sha }}"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              BEFORE="$(git rev-parse HEAD^)"
+            else
+              BEFORE=""
+            fi
+          fi
+
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            MIGRATIONS="$(git ls-files 'database/migrations/*.php')"
+          else
+            MIGRATIONS="$(git diff --name-only --diff-filter=A "$BEFORE" "$CURRENT" -- 'database/migrations/*.php')"
+          fi
+
+          if [ -n "$MIGRATIONS" ]; then
+            echo "has_migrations=true" >> "$GITHUB_OUTPUT"
+            echo "Migration baru ditemukan:"
+            echo "$MIGRATIONS"
+          else
+            echo "has_migrations=false" >> "$GITHUB_OUTPUT"
+            echo "Tidak ada migration baru. Proses migrate dilewati."
+          fi
 
       - name: Siapkan Node.js
         uses: actions/setup-node@v4
@@ -30,11 +63,9 @@ jobs:
           node-version: '22'
           cache: npm
 
-      # npm ci memakai package-lock.json agar hasil instalasi konsisten.
       - name: Instal dependensi frontend
         run: npm ci
 
-      # Menghasilkan aset production ke public/build.
       - name: Build Tailwind CSS dan JavaScript
         run: npm run build
 
@@ -44,8 +75,6 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
-      # File .ftp-deploy-sync-state.json disimpan di server.
-      # public/build sengaja tidak dikecualikan agar hasil build ikut diunggah.
       - name: Upload perubahan via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -56,9 +85,6 @@ jobs:
           port: 21
           timeout: 300000
           log-level: verbose
-
-          # Akun FTP harus memiliki root ke folder deployment:
-          # /home/clouyogf/public_html/pos
           local-dir: ./
           server-dir: ./
           dangerous-clean-slate: false
@@ -111,3 +137,18 @@ jobs:
             Thumbs.db
             **/Thumbs.db
             tests/**
+
+      # Hanya berjalan jika ada file migration baru.
+      - name: Jalankan migration baru di server
+        if: steps.migration_check.outputs.has_migrations == 'true'
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          script_stop: true
+          script: |
+            cd /home/clouyogf/public_html/pos
+            php artisan migrate --force --no-interaction
+            php artisan optimize:clear

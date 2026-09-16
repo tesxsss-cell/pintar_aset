@@ -11,7 +11,24 @@ class Asset extends Model
     use HasFactory;
 
     protected $fillable = ['code','slug','name','owner','location','category','condition','description','notes','acquired_at','image_path','active'];
-    protected function casts(): array { return ['acquired_at' => 'date', 'active' => 'boolean']; }
-    public function reports(): HasMany { return $this->hasMany(AssetUpdateReport::class); }
-    public function getRouteKeyName(): string { return 'slug'; }
+
+    protected function casts(): array
+    {
+        return ['acquired_at' => 'date', 'active' => 'boolean'];
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(AssetUpdateReport::class);
+    }
+
+    public function scanEvents(): HasMany
+    {
+        return $this->hasMany(AssetScan::class);
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 }

@@ -62,9 +62,7 @@
             @forelse ($assets as $asset)
                 <article class="grid gap-4 p-4 lg:grid-cols-[minmax(14rem,1.7fr)_1fr_1.2fr_9rem_17rem] lg:items-center lg:px-5">
                     <div class="flex min-w-0 items-center gap-3">
-                        <span class="grid size-11 shrink-0 place-items-center rounded-lg bg-slate-100 text-sm font-bold text-slate-600">
-                            {{ strtoupper(substr($asset->category, 0, 1)) }}
-                        </span>
+                      
                         <span class="min-w-0">
                             <strong class="block truncate text-sm text-slate-900">
                                 {{ $asset->name }}

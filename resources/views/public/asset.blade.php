@@ -15,22 +15,24 @@
         @endif
 
         <header class="p-5 sm:p-8">
-            <span @class([
-                'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold',
-                'bg-emerald-50 text-emerald-700' => $asset->condition === 'Baik',
-                'bg-amber-50 text-amber-700' => $asset->condition === 'Perlu Perbaikan',
-                'bg-red-50 text-red-700' => in_array($asset->condition, ['Rusak', 'Hilang']),
-            ])>
-                {{ $asset->condition }}
-            </span>
+            <div class="min-w-0">
+                <span @class([
+                    'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold',
+                    'bg-emerald-50 text-emerald-700' => $asset->condition === 'Baik',
+                    'bg-amber-50 text-amber-700' => $asset->condition === 'Perlu Perbaikan',
+                    'bg-red-50 text-red-700' => in_array($asset->condition, ['Rusak', 'Hilang']),
+                ])>
+                    {{ $asset->condition }}
+                </span>
 
-            <p class="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
-                {{ $asset->code }}
-            </p>
-            <h1 class="mt-1 break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-                {{ $asset->name }}
-            </h1>
-            <p class="mt-1 text-sm text-slate-500">{{ $asset->category }}</p>
+                <p class="mt-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                    {{ $asset->code }}
+                </p>
+                <h1 class="mt-1 break-words text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                    {{ $asset->name }}
+                </h1>
+                <p class="mt-1 text-sm text-slate-500">{{ $asset->category }}</p>
+            </div>
         </header>
 
         <dl class="grid divide-y divide-slate-200 border-y border-slate-200 bg-slate-50 sm:grid-cols-2 sm:divide-x sm:divide-y-0">

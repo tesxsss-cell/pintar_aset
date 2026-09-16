@@ -53,9 +53,6 @@
 
             <div class="p-5 sm:p-7">
                 <header class="flex items-start gap-4 border-b border-slate-200 pb-6">
-                    <span class="grid size-16 shrink-0 place-items-center rounded-xl bg-slate-100 text-xl font-bold text-slate-600 sm:size-20 sm:text-2xl">
-                        {{ strtoupper(substr($asset->category, 0, 1)) }}
-                    </span>
 
                     <div class="min-w-0">
                         <span @class([

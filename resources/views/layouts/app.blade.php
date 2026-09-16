@@ -43,6 +43,7 @@
                         ['route' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'home', 'label' => 'Ringkasan'],
                         ['route' => 'admin.assets.index', 'active' => 'admin.assets.*', 'icon' => 'package', 'label' => 'Daftar aset'],
                         ['route' => 'admin.reports.index', 'active' => 'admin.reports.*', 'icon' => 'flag', 'label' => 'Laporan perubahan'],
+                        ['route' => 'admin.scan-tracking.index', 'active' => 'admin.scan-tracking.*', 'icon' => 'qr-code', 'label' => 'Tracking QR'],
                     ];
                 @endphp
 

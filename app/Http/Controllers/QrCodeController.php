@@ -113,7 +113,7 @@ class QrCodeController extends Controller
     private function makeQrCode(Asset $asset, int $size, int $margin): QrCode
     {
         return new QrCode(
-            data: route('assets.public', $asset),
+            data: route('assets.public', ['asset' => $asset, 'source' => 'qr']),
             encoding: new Encoding('UTF-8'),
             errorCorrectionLevel: ErrorCorrectionLevel::High,
             size: $size,
