@@ -15,45 +15,13 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build dan sinkronkan file yang berubah
+    name: Build, upload, dan migrate
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: Ambil source terbaru dari GitHub
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Periksa migration baru
-        id: migration_check
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          BEFORE="${{ github.event.before }}"
-          CURRENT="${{ github.sha }}"
-
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "has_migrations=true" >> "$GITHUB_OUTPUT"
-            echo "Deployment manual: server akan memeriksa migration yang masih pending."
-            exit 0
-          fi
-
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            MIGRATIONS="$(git ls-files 'database/migrations/*.php')"
-          else
-            MIGRATIONS="$(git diff --name-only --diff-filter=A "$BEFORE" "$CURRENT" -- 'database/migrations/*.php')"
-          fi
-
-          if [ -n "$MIGRATIONS" ]; then
-            echo "has_migrations=true" >> "$GITHUB_OUTPUT"
-            echo "Migration baru ditemukan:"
-            echo "$MIGRATIONS"
-          else
-            echo "has_migrations=false" >> "$GITHUB_OUTPUT"
-            echo "Tidak ada migration baru. Langkah migrate dilewati."
-          fi
 
       - name: Siapkan Node.js
         uses: actions/setup-node@v4
@@ -136,8 +104,11 @@ jobs:
             **/Thumbs.db
             tests/**
 
-      - name: Jalankan migration baru di server
-        if: steps.migration_check.outputs.has_migrations == 'true'
+      # Langkah ini selalu dijalankan setelah upload.
+      # Laravel hanya menjalankan migration yang belum tercatat di database.
+      # Jika tidak ada migration baru, hasilnya "Nothing to migrate" dan
+      # tidak ada perubahan pada database.
+      - name: Periksa dan jalankan migration pending
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -168,12 +139,13 @@ jobs:
 
             if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
               echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
-              echo "Tambahkan GitHub Secret SSH_APP_PATH dengan path lengkap folder yang berisi file artisan."
+              echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
               echo "Contoh: /home/clourvyr/public_html/pos"
               exit 1
             fi
 
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
+
             php artisan migrate --force --no-interaction
             php artisan optimize:clear
