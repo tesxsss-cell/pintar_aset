@@ -35,7 +35,7 @@ class ScanTrackingController extends Controller
             ])
             ->orderByDesc('scan_count')
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         $totalScans = AssetScan::query()->where('scanned_at', '>=', $start)->count();
