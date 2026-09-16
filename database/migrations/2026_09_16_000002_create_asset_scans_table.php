@@ -17,6 +17,7 @@ return new class extends Migration
             $table->index(['asset_id', 'scanned_at']);
         });
     }
+    
 
     public function down(): void
     {
