@@ -35,11 +35,9 @@ jobs:
           CURRENT="${{ github.sha }}"
 
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if git rev-parse HEAD^ >/dev/null 2>&1; then
-              BEFORE="$(git rev-parse HEAD^)"
-            else
-              BEFORE=""
-            fi
+            echo "has_migrations=true" >> "$GITHUB_OUTPUT"
+            echo "Deployment manual: server akan memeriksa migration yang masih pending."
+            exit 0
           fi
 
           if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
@@ -54,7 +52,7 @@ jobs:
             echo "$MIGRATIONS"
           else
             echo "has_migrations=false" >> "$GITHUB_OUTPUT"
-            echo "Tidak ada migration baru. Proses migrate dilewati."
+            echo "Tidak ada migration baru. Langkah migrate dilewati."
           fi
 
       - name: Siapkan Node.js
@@ -138,7 +136,6 @@ jobs:
             **/Thumbs.db
             tests/**
 
-      # Hanya berjalan jika ada file migration baru.
       - name: Jalankan migration baru di server
         if: steps.migration_check.outputs.has_migrations == 'true'
         uses: appleboy/ssh-action@v1.2.2
@@ -146,9 +143,37 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          port: ${{ secrets.SSH_PORT || '22' }}
-          script_stop: true
+          port: ${{ secrets.SSH_PORT || '21098' }}
+          command_timeout: 10m
           script: |
-            cd /home/clouyogf/public_html/pos
+            set -e
+
+            APP_DIR="${{ secrets.SSH_APP_PATH }}"
+
+            if [ -z "$APP_DIR" ]; then
+              for CANDIDATE in "$HOME/public_html/pos" "$HOME/public_html"; do
+                if [ -f "$CANDIDATE/artisan" ]; then
+                  APP_DIR="$CANDIDATE"
+                  break
+                fi
+              done
+            fi
+
+            if [ -z "$APP_DIR" ]; then
+              ARTISAN_FILE="$(find "$HOME/public_html" -maxdepth 4 -type f -name artisan -print -quit 2>/dev/null || true)"
+              if [ -n "$ARTISAN_FILE" ]; then
+                APP_DIR="$(dirname "$ARTISAN_FILE")"
+              fi
+            fi
+
+            if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
+              echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
+              echo "Tambahkan GitHub Secret SSH_APP_PATH dengan path lengkap folder yang berisi file artisan."
+              echo "Contoh: /home/clourvyr/public_html/pos"
+              exit 1
+            fi
+
+            echo "Aplikasi Laravel ditemukan di: $APP_DIR"
+            cd "$APP_DIR"
             php artisan migrate --force --no-interaction
             php artisan optimize:clear
