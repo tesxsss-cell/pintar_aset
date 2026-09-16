@@ -99,12 +99,10 @@
                     <div class="grid grid-cols-3 gap-2 lg:justify-self-end">
                         <a
                             class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                            href="{{ route('assets.public', $asset) }}"
-                            target="_blank"
-                            rel="noopener"
-                            title="Lihat informasi publik"
+                            href="{{ route('admin.assets.show', $asset) }}"
+                            title="Lihat detail informasi aset"
                         >
-                            <x-icon name="external-link" size="16" />
+                            <x-icon name="chevron-right" size="16" />
                             Lihat
                         </a>
 

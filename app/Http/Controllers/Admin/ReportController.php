@@ -7,6 +7,7 @@ use App\Models\AssetUpdateReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ReportController extends Controller
@@ -47,31 +48,27 @@ class ReportController extends Controller
         );
 
         $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'owner' => ['required', 'string', 'max:150'],
+            'location' => ['required', 'string', 'max:150'],
+            'category' => ['required', 'string', 'max:100'],
+            'condition' => [
+                'required',
+                Rule::in(['Baik', 'Perlu Perbaikan', 'Rusak', 'Hilang']),
+            ],
+            'description' => ['nullable', 'string', 'max:1000'],
             'admin_note' => ['nullable', 'string', 'max:1000'],
         ]);
 
         DB::transaction(function () use ($data, $report): void {
-            $propertyMap = [
-                'proposed_name' => 'name',
-                'proposed_owner' => 'owner',
-                'proposed_location' => 'location',
-                'proposed_condition' => 'condition',
-                'proposed_category' => 'category',
-                'proposed_description' => 'description',
-            ];
-
-            $assetUpdates = [];
-
-            foreach ($propertyMap as $source => $destination) {
-                if (filled($report->{$source})) {
-                    $assetUpdates[$destination] = $report->{$source};
-                }
-            }
-
-            // Foto bukti tidak digunakan untuk mengganti foto utama aset.
-            if ($assetUpdates !== []) {
-                $report->asset->update($assetUpdates);
-            }
+            $report->asset->update([
+                'name' => $data['name'],
+                'owner' => $data['owner'],
+                'location' => $data['location'],
+                'category' => $data['category'],
+                'condition' => $data['condition'],
+                'description' => $data['description'] ?? null,
+            ]);
 
             $report->update([
                 'status' => 'approved',
@@ -83,10 +80,7 @@ class ReportController extends Controller
 
         return redirect()
             ->route('admin.reports.show', $report)
-            ->with(
-                'success',
-                'Laporan disetujui dan informasi aset diperbarui.',
-            );
+            ->with('success', 'Laporan disetujui dan informasi aset diperbarui.');
     }
 
     public function reject(

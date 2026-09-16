@@ -1,11 +1,98 @@
+const formatFileSize = (bytes) => {
+    if (bytes < 1024 * 1024) {
+        return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const compressImage = async (file) => {
+    if (!file.type.startsWith('image/')) {
+        return file;
+    }
+
+    const bitmap = await createImageBitmap(file);
+    const maxDimension = 1600;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const context = canvas.getContext('2d');
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (result) => result ? resolve(result) : reject(new Error('Gagal mengompres gambar.')),
+            'image/webp',
+            0.78,
+        );
+    });
+
+    if (blob.size >= file.size) {
+        return file;
+    }
+
+    const baseName = file.name.replace(/\.[^/.]+$/, '');
+
+    return new File([blob], `${baseName}.webp`, {
+        type: 'image/webp',
+        lastModified: Date.now(),
+    });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-image-input]').forEach((input) => {
-        input.addEventListener('change', () => {
+        input.addEventListener('change', async () => {
             const preview = document.querySelector(input.dataset.imagePreview);
-            const file = input.files?.[0];
-            if (!preview || !file) return;
-            preview.src = URL.createObjectURL(file);
-            preview.classList.remove('hidden');
+            const status = input.closest('label')?.querySelector('[data-image-status]');
+            const originalFile = input.files?.[0];
+
+            if (!originalFile) {
+                preview?.classList.add('hidden');
+                return;
+            }
+
+            const maxSize = Number(input.dataset.maxSize || 0);
+
+            if (maxSize && originalFile.size > maxSize) {
+                input.value = '';
+                preview?.classList.add('hidden');
+                if (status) {
+                    status.textContent = 'Ukuran foto melebihi batas maksimal 5 MB.';
+                    status.classList.add('text-red-600');
+                }
+                return;
+            }
+
+            let selectedFile = originalFile;
+
+            if (input.hasAttribute('data-compress-image') && 'createImageBitmap' in window) {
+                try {
+                    if (status) {
+                        status.textContent = 'Mengompres foto…';
+                        status.classList.remove('text-red-600');
+                    }
+
+                    selectedFile = await compressImage(originalFile);
+                    const transfer = new DataTransfer();
+                    transfer.items.add(selectedFile);
+                    input.files = transfer.files;
+                } catch {
+                    selectedFile = originalFile;
+                }
+            }
+
+            if (preview) {
+                preview.src = URL.createObjectURL(selectedFile);
+                preview.classList.remove('hidden');
+            }
+
+            if (status) {
+                status.textContent = `Siap diunggah (${formatFileSize(selectedFile.size)}). Maksimal 5 MB dan akan dikompres kembali oleh sistem.`;
+                status.classList.remove('text-red-600');
+            }
         });
     });
 });
