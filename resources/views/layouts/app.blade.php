@@ -119,6 +119,14 @@
                     </div>
 
                     <a
+                        class="hidden min-h-11 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 sm:inline-flex"
+                        href="{{ route('admin.assets.import.create') }}"
+                    >
+                        <x-icon name="upload" size="18" />
+                        Impor Excel
+                    </a>
+
+                    <a
                         class="hidden min-h-11 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:inline-flex"
                         href="{{ route('admin.assets.create') }}"
                     >

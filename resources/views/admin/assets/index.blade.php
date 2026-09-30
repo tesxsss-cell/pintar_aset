@@ -6,16 +6,10 @@
 @section('content')
     <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p class="text-sm text-slate-500">Kelola informasi aset dan cetak seluruh label QR dalam format A4.</p>
-        <div class="flex flex-wrap gap-3">
-            <a class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100" href="{{ route('admin.assets.import.create') }}">
-                <x-icon name="upload" size="18" />
-                Impor Excel
-            </a>
-            <a class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.print-qr') }}" target="_blank" rel="noopener">
-                <x-icon name="printer" size="18" />
-                Cetak semua QR
-            </a>
-        </div>
+        <a class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.print-qr') }}" target="_blank" rel="noopener">
+            <x-icon name="printer" size="18" />
+            Cetak semua QR
+        </a>
     </div>
 
     <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
