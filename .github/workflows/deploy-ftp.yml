@@ -149,15 +149,31 @@ jobs:
 
             # Regenerasi autoloader Composer agar kelas/service baru
             # (mis. App\Services\AssetImportService, App\Support\XlsxReader)
-            # langsung dikenali tanpa perlu jalankan perintah manual.
+            # langsung dikenali. Server Namecheap sering tidak punya perintah
+            # "composer" global, jadi kita cari di lokasi umum; bila tetap tidak
+            # ada, unduh composer.phar sementara agar dump-autoload tetap jalan.
+            COMPOSER_CMD=""
             if command -v composer >/dev/null 2>&1; then
-              composer dump-autoload --optimize --no-interaction
-            elif [ -f composer.phar ]; then
-              php composer.phar dump-autoload --optimize --no-interaction
+              COMPOSER_CMD="composer"
             else
-              echo "PERINGATAN: composer tidak ditemukan, melewati dump-autoload."
-              echo "Kelas baru mungkin tidak dikenali sampai autoloader diperbarui."
+              for CBIN in /opt/cpanel/composer/bin/composer /usr/local/bin/composer "$HOME/composer.phar" ./composer.phar; do
+                if [ -f "$CBIN" ]; then
+                  COMPOSER_CMD="php $CBIN"
+                  break
+                fi
+              done
             fi
+
+            if [ -z "$COMPOSER_CMD" ]; then
+              echo "composer tidak ditemukan, mengunduh composer.phar sementara..."
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              php composer-setup.php --install-dir=. --filename=composer.phar
+              php -r "@unlink('composer-setup.php');"
+              COMPOSER_CMD="php composer.phar"
+            fi
+
+            echo "Memakai composer: $COMPOSER_CMD"
+            $COMPOSER_CMD dump-autoload --optimize --no-interaction --no-scripts
 
             php artisan migrate --force --no-interaction
             php artisan optimize:clear
