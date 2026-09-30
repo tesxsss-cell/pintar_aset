@@ -42,6 +42,16 @@
                         alt="Foto {{ $asset->name }}"
                     >
                 </figure>
+                <div class="flex justify-center border-b border-slate-200 bg-slate-50 pb-4">
+                    <a
+                        class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                        href="{{ asset('storage/'.$asset->image_path) }}"
+                        download
+                    >
+                        <x-icon name="download" size="16" />
+                        Download foto
+                    </a>
+                </div>
             @else
                 <div class="grid min-h-52 place-items-center border-b border-slate-200 bg-slate-50 text-slate-400">
                     <div class="text-center">
@@ -84,6 +94,38 @@
                         </div>
                     @endforeach
                 </dl>
+
+                @if (! empty($asset->customFields()))
+                    <div class="mt-6">
+                        <h3 class="text-sm font-bold text-slate-900">Informasi tambahan</h3>
+                        <dl class="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200">
+                            @foreach ($asset->customFields() as $field)
+                                <div class="grid gap-1 p-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+                                    <dt class="text-sm text-slate-500">{{ $field['label'] }}</dt>
+                                    <dd class="whitespace-pre-line break-words text-sm font-semibold text-slate-900">{{ $field['value'] !== '' ? $field['value'] : '—' }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </div>
+                @endif
+
+                @if (! empty($asset->extraPhotos()))
+                    <div class="mt-6">
+                        <h3 class="text-sm font-bold text-slate-900">Foto tambahan</h3>
+                        <div class="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            @foreach ($asset->extraPhotos() as $photo)
+                                <figure class="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                                    <img class="aspect-square w-full object-contain p-2" src="{{ asset('storage/'.$photo['path']) }}" alt="{{ $photo['label'] }}">
+                                    <figcaption class="border-t border-slate-200 px-2 py-1.5 text-center text-xs text-slate-500">{{ $photo['label'] }}</figcaption>
+                                    <a class="flex items-center justify-center gap-1.5 border-t border-slate-200 bg-white px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="{{ asset('storage/'.$photo['path']) }}" download>
+                                        <x-icon name="download" size="14" />
+                                        Download
+                                    </a>
+                                </figure>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 @if ($asset->description)
                     <div class="mt-6 rounded-lg bg-slate-50 p-4 sm:p-5">

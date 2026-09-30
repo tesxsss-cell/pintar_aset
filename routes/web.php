@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AssetController;
+use App\Http\Controllers\Admin\AssetImportController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReportController;
@@ -68,6 +69,12 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
 
         Route::get('/aset/cetak-semua-qr', [AssetController::class, 'printAllQr'])
             ->name('assets.print-qr');
+
+        Route::get('/aset/impor', [AssetImportController::class, 'create'])
+            ->name('assets.import.create');
+
+        Route::post('/aset/impor', [AssetImportController::class, 'store'])
+            ->name('assets.import.store');
 
         Route::get('/aset/{asset}/qr.png', [QrCodeController::class, 'png'])
             ->name('assets.qr.png');

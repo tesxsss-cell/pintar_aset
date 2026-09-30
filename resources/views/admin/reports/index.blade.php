@@ -38,7 +38,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 <span class="block text-sm font-semibold text-slate-800">{{ $report->reporter_name }}</span>
-                                <span class="mt-1 block text-xs text-slate-500">{{ $report->reporter_email ?: 'Email tidak diisi' }}</span>
+                                <span class="mt-1 block text-xs text-slate-500">{{ $report->reporter_phone ?: 'Telepon tidak diisi' }}</span>
                             </td>
                             <td class="max-w-sm px-5 py-4 text-sm leading-6 text-slate-600">{{ Str::limit($report->reason, 80) }}</td>
                             <td class="whitespace-nowrap px-5 py-4 text-sm text-slate-600">

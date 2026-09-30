@@ -62,6 +62,7 @@ class AssetController extends Controller
         $data = $this->validated($request);
         $data['slug'] = Str::slug($data['code'].'-'.$data['name'])
             .'-'.Str::lower(Str::random(5));
+        $data['metadata'] = $this->buildMetadata($request);
 
         if ($request->hasFile('image')) {
             $data['image_path'] = $request
@@ -96,6 +97,7 @@ class AssetController extends Controller
         Asset $asset,
     ): RedirectResponse {
         $data = $this->validated($request, $asset);
+        $data['metadata'] = $this->buildMetadata($request, $asset);
 
         if ($request->hasFile('image')) {
             $oldImagePath = $asset->image_path;
@@ -106,6 +108,10 @@ class AssetController extends Controller
             if ($oldImagePath) {
                 Storage::disk('public')->delete($oldImagePath);
             }
+        } elseif ($request->boolean('remove_image') && $asset->image_path) {
+            // Hapus foto utama saat ini tanpa mengunggah pengganti.
+            Storage::disk('public')->delete($asset->image_path);
+            $data['image_path'] = null;
         }
 
         $asset->update($data);
@@ -195,6 +201,108 @@ class AssetController extends Controller
                 'mimes:jpg,jpeg,png,webp',
                 'max:4096',
             ],
+            'custom_keys' => ['nullable', 'array'],
+            'custom_keys.*' => ['nullable', 'string', 'max:100'],
+            'custom_values' => ['nullable', 'array'],
+            'custom_values.*' => ['nullable', 'string', 'max:1000'],
+            'photo_labels' => ['nullable', 'array'],
+            'photo_labels.*' => ['nullable', 'string', 'max:150'],
+            'photo_files' => ['nullable', 'array'],
+            'photo_files.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'photo_remove' => ['nullable', 'array'],
+            'new_photo_labels' => ['nullable', 'array'],
+            'new_photo_labels.*' => ['nullable', 'string', 'max:150'],
+            'new_photo_files' => ['nullable', 'array'],
+            'new_photo_files.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
+    }
+
+    /**
+     * Menyusun kolom JSON "metadata" dari field dinamis (custom fields) yang
+     * dikirim form, sambil mempertahankan foto tambahan hasil impor Excel.
+     */
+    private function buildMetadata(Request $request, ?Asset $asset = null): ?array
+    {
+        $keys = $request->input('custom_keys', []);
+        $values = $request->input('custom_values', []);
+
+        $fields = [];
+        foreach ((array) $keys as $i => $label) {
+            $label = trim((string) $label);
+            $value = trim((string) ($values[$i] ?? ''));
+
+            if ($label === '' && $value === '') {
+                continue;
+            }
+
+            $fields[] = ['label' => $label !== '' ? $label : 'Info', 'value' => $value];
+        }
+
+        $metadata = [];
+        if (! empty($fields)) {
+            $metadata['fields'] = $fields;
+        }
+
+        // Proses foto tambahan (ganti, ubah label, hapus, atau tambah baru).
+        $photos = $this->processExtraPhotos($request, $asset);
+        if (! empty($photos)) {
+            $metadata['photos'] = $photos;
+        }
+
+        return $metadata ?: null;
+    }
+
+    /**
+     * Mengelola foto tambahan pada kolom JSON "metadata":
+     * - Foto lama dipertahankan, kecuali ditandai hapus.
+     * - Bisa diganti dengan unggahan baru (file lama dihapus dari storage).
+     * - Label tiap foto dapat diubah.
+     * - Foto tambahan baru dapat ditambahkan.
+     *
+     * @return array<int, array{label: string, path: string}>
+     */
+    private function processExtraPhotos(Request $request, ?Asset $asset): array
+    {
+        $photos = [];
+        $existing = $asset?->extraPhotos() ?? [];
+        $removeFlags = (array) $request->input('photo_remove', []);
+        $labels = (array) $request->input('photo_labels', []);
+        $files = $request->file('photo_files', []);
+
+        foreach ($existing as $i => $photo) {
+            // Hapus foto bila ditandai.
+            if (! empty($removeFlags[$i])) {
+                Storage::disk('public')->delete($photo['path']);
+
+                continue;
+            }
+
+            $path = $photo['path'];
+
+            // Ganti foto dengan unggahan baru.
+            if (isset($files[$i]) && $files[$i] && $files[$i]->isValid()) {
+                $path = $files[$i]->store('assets/imported', 'public');
+                Storage::disk('public')->delete($photo['path']);
+            }
+
+            $label = trim((string) ($labels[$i] ?? $photo['label']));
+            $photos[] = ['label' => $label !== '' ? $label : 'Foto tambahan', 'path' => $path];
+        }
+
+        // Tambah foto tambahan baru.
+        $newLabels = (array) $request->input('new_photo_labels', []);
+        $newFiles = $request->file('new_photo_files', []);
+
+        foreach ((array) $newFiles as $i => $file) {
+            if (! $file || ! $file->isValid()) {
+                continue;
+            }
+
+            $path = $file->store('assets/imported', 'public');
+            $label = trim((string) ($newLabels[$i] ?? ''));
+            $photos[] = ['label' => $label !== '' ? $label : 'Foto tambahan', 'path' => $path];
+        }
+
+        return $photos;
     }
 }

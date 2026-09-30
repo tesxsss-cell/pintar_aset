@@ -58,9 +58,37 @@ class ReportController extends Controller
             ],
             'description' => ['nullable', 'string', 'max:1000'],
             'admin_note' => ['nullable', 'string', 'max:1000'],
+            'custom_keys' => ['nullable', 'array'],
+            'custom_keys.*' => ['nullable', 'string', 'max:150'],
+            'custom_values' => ['nullable', 'array'],
+            'custom_values.*' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        DB::transaction(function () use ($data, $report): void {
+        // Terapkan informasi tambahan (custom fields) ke kolom JSON metadata,
+        // dengan tetap mempertahankan foto tambahan yang sudah ada.
+        $fields = [];
+        foreach ((array) ($data['custom_keys'] ?? []) as $i => $label) {
+            $label = trim((string) $label);
+            $value = trim((string) (($data['custom_values'][$i] ?? '')));
+
+            if ($label === '' && $value === '') {
+                continue;
+            }
+
+            $fields[] = ['label' => $label !== '' ? $label : 'Info', 'value' => $value];
+        }
+
+        $metadata = $report->asset->metadata ?? [];
+        if (! is_array($metadata)) {
+            $metadata = [];
+        }
+        if ($fields) {
+            $metadata['fields'] = $fields;
+        } else {
+            unset($metadata['fields']);
+        }
+
+        DB::transaction(function () use ($data, $report, $metadata): void {
             $report->asset->update([
                 'name' => $data['name'],
                 'owner' => $data['owner'],
@@ -68,6 +96,7 @@ class ReportController extends Controller
                 'category' => $data['category'],
                 'condition' => $data['condition'],
                 'description' => $data['description'] ?? null,
+                'metadata' => $metadata ?: null,
             ]);
 
             $report->update([

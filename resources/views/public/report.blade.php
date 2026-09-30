@@ -24,11 +24,6 @@
                 </label>
 
                 <label class="grid gap-2 text-sm font-semibold text-slate-700">
-                    <span>Email <span class="font-normal text-slate-400">(opsional)</span></span>
-                    <input class="min-h-11 rounded-lg border border-slate-300 px-3.5 font-normal focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" type="email" name="reporter_email" value="{{ old('reporter_email') }}" autocomplete="email">
-                </label>
-
-                <label class="grid gap-2 text-sm font-semibold text-slate-700">
                     <span>Nomor telepon <span class="font-normal text-slate-400">(opsional)</span></span>
                     <input class="min-h-11 rounded-lg border border-slate-300 px-3.5 font-normal focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" type="tel" name="reporter_phone" value="{{ old('reporter_phone') }}" autocomplete="tel">
                 </label>
@@ -40,9 +35,9 @@
             </div>
 
             <label class="grid gap-2 text-sm font-semibold text-slate-700">
-                <span>Foto bukti <span class="font-normal text-slate-400">(opsional)</span></span>
-                <input class="min-h-11 rounded-lg border border-dashed border-slate-300 p-3 text-sm font-normal" type="file" name="evidence_image" accept="image/jpeg,image/png,image/webp" data-image-input data-image-preview="#evidence-preview" data-compress-image data-max-size="5242880">
-                <span class="text-xs font-normal text-slate-500" data-image-status>JPG, PNG, atau WebP. Maksimal 5 MB. Foto akan dikompres otomatis agar lebih ringan.</span>
+                <span>Foto bukti <span class="text-red-500">*</span></span>
+                <input class="min-h-11 rounded-lg border border-dashed border-slate-300 p-3 text-sm font-normal" type="file" name="evidence_image" accept="image/jpeg,image/png,image/webp" required data-image-input data-image-preview="#evidence-preview" data-compress-image data-max-size="5242880">
+                <span class="text-xs font-normal text-slate-500" data-image-status>Wajib. JPG, PNG, atau WebP. Maksimal 5 MB. Foto akan dikompres otomatis agar lebih ringan.</span>
                 <img id="evidence-preview" class="hidden aspect-square w-full rounded-lg border border-slate-200 bg-slate-50 object-contain p-2" alt="Pratinjau foto bukti">
             </label>
 
@@ -78,6 +73,25 @@
                     <textarea class="min-h-24 rounded-lg border border-slate-300 p-3.5 font-normal focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" name="proposed_description">{{ old('proposed_description') }}</textarea>
                 </label>
             </div>
+
+            @if (! empty($asset->customFields()))
+                <div class="grid gap-5">
+                    <div class="flex items-center gap-3 text-center text-xs font-semibold text-slate-500 before:h-px before:flex-1 before:bg-slate-200 after:h-px after:flex-1 after:bg-slate-200">
+                        <span>Informasi tambahan yang tidak sesuai</span>
+                    </div>
+                    <p class="-mt-3 text-center text-xs font-normal text-slate-500">Isi hanya field yang ingin Anda ubah. Placeholder abu-abu adalah data saat ini.</p>
+
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        @foreach ($asset->customFields() as $i => $field)
+                            <label class="grid gap-2 text-sm font-semibold text-slate-700">
+                                <span>{{ $field['label'] }}</span>
+                                <input type="hidden" name="proposed_field_labels[{{ $i }}]" value="{{ $field['label'] }}">
+                                <input class="min-h-11 rounded-lg border border-slate-300 px-3.5 font-normal focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" name="proposed_field_values[{{ $i }}]" value="{{ old('proposed_field_values.'.$i) }}" placeholder="{{ $field['value'] }}">
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             @if ($errors->any())
                 <div class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">

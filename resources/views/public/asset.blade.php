@@ -60,6 +60,20 @@
             </div>
         </dl>
 
+        @if (! empty($asset->customFields()))
+            <section class="p-5 sm:p-8">
+                <h2 class="text-lg font-bold text-slate-950">Informasi tambahan</h2>
+                <dl class="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200">
+                    @foreach ($asset->customFields() as $field)
+                        <div class="grid gap-1 p-4 sm:grid-cols-[12rem_minmax(0,1fr)] sm:gap-4">
+                            <dt class="text-sm text-slate-500">{{ $field['label'] }}</dt>
+                            <dd class="whitespace-pre-line break-words text-sm font-semibold text-slate-900">{{ $field['value'] !== '' ? $field['value'] : '—' }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </section>
+        @endif
+
         @if ($asset->description)
             <section class="p-5 sm:p-8">
                 <h2 class="text-lg font-bold text-slate-950">Tentang barang</h2>

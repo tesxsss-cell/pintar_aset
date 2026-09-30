@@ -13,31 +13,59 @@
             'Kategori' => [$report->asset->category, $report->proposed_category],
             'Deskripsi' => [$report->asset->description, $report->proposed_description],
         ])->filter(fn ($values) => filled($values[1]) && (string) $values[0] !== (string) $values[1]);
+
+        // Usulan perubahan untuk informasi tambahan (custom fields).
+        $proposedFields = collect($report->proposedFields());
+        $currentFields = collect($report->asset->customFields());
+        $currentByLabel = $currentFields->keyBy('label');
+        $proposedByLabel = $proposedFields->keyBy('label');
+
+        $fieldChanges = $proposedFields->filter(function ($p) use ($currentByLabel) {
+            $current = $currentByLabel->get($p['label'])['value'] ?? null;
+
+            return filled($p['value']) && (string) $current !== (string) $p['value'];
+        });
+
+        // Daftar field tambahan untuk form persetujuan (gabungan data aset + usulan).
+        $editFields = $currentFields->map(function ($f) use ($proposedByLabel) {
+            $proposed = $proposedByLabel->get($f['label'])['value'] ?? '';
+
+            return ['label' => $f['label'], 'value' => $proposed !== '' ? $proposed : $f['value']];
+        })->values();
+
+        foreach ($proposedFields as $p) {
+            if (! $currentByLabel->has($p['label'])) {
+                $editFields->push(['label' => $p['label'], 'value' => $p['value']]);
+            }
+        }
+
+        $totalChanges = $changes->count() + $fieldChanges->count();
+        $hasChanges = $totalChanges > 0;
     @endphp
 
     <div class="mx-auto grid max-w-5xl gap-6">
         <section @class([
             'rounded-xl border p-5 shadow-sm sm:p-6',
-            'border-blue-200 bg-blue-50/70' => $changes->isNotEmpty(),
-            'border-slate-200 bg-white' => $changes->isEmpty(),
+            'border-blue-200 bg-blue-50/70' => $hasChanges,
+            'border-slate-200 bg-white' => ! $hasChanges,
         ])>
             <div class="flex items-start gap-3">
                 <span @class([
                     'grid size-10 shrink-0 place-items-center rounded-lg',
-                    'bg-blue-600 text-white' => $changes->isNotEmpty(),
-                    'bg-slate-100 text-slate-500' => $changes->isEmpty(),
+                    'bg-blue-600 text-white' => $hasChanges,
+                    'bg-slate-100 text-slate-500' => ! $hasChanges,
                 ])>
-                    <x-icon :name="$changes->isNotEmpty() ? 'edit' : 'info'" size="19" />
+                    <x-icon :name="$hasChanges ? 'edit' : 'info'" size="19" />
                 </span>
                 <div class="min-w-0 flex-1">
                     <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Informasi perubahan</p>
                     <h2 class="mt-1 text-lg font-bold text-slate-950">
-                        {{ $changes->isNotEmpty() ? $changes->count().' perubahan diajukan' : 'Tidak ada perubahan informasi' }}
+                        {{ $hasChanges ? $totalChanges.' perubahan diajukan' : 'Tidak ada perubahan informasi' }}
                     </h2>
                 </div>
             </div>
 
-            @if ($changes->isNotEmpty())
+            @if ($hasChanges)
                 <div class="mt-5 divide-y divide-blue-200 border-y border-blue-200">
                     @foreach ($changes as $label => $values)
                         <div class="grid gap-2 py-4 sm:grid-cols-[7rem_minmax(0,1fr)_1.5rem_minmax(0,1fr)] sm:items-center">
@@ -45,6 +73,15 @@
                             <span class="break-words text-sm text-slate-500 line-through">{{ $values[0] ?: '—' }}</span>
                             <x-icon name="arrow-right" size="16" class="hidden text-blue-500 sm:block" />
                             <span class="break-words text-sm font-semibold text-blue-800">{{ $values[1] }}</span>
+                        </div>
+                    @endforeach
+
+                    @foreach ($fieldChanges as $change)
+                        <div class="grid gap-2 py-4 sm:grid-cols-[7rem_minmax(0,1fr)_1.5rem_minmax(0,1fr)] sm:items-center">
+                            <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $change['label'] }}</span>
+                            <span class="break-words text-sm text-slate-500 line-through">{{ $currentByLabel->get($change['label'])['value'] ?? '—' }}</span>
+                            <x-icon name="arrow-right" size="16" class="hidden text-blue-500 sm:block" />
+                            <span class="break-words text-sm font-semibold text-blue-800">{{ $change['value'] }}</span>
                         </div>
                     @endforeach
                 </div>
@@ -105,6 +142,24 @@
                         </label>
                     </div>
 
+                    @if ($editFields->isNotEmpty())
+                        <div class="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">Informasi tambahan</h3>
+                                <p class="mt-1 text-xs text-slate-500">Nilai usulan pelapor sudah diterapkan. Sesuaikan bila perlu sebelum menyetujui.</p>
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                @foreach ($editFields as $i => $field)
+                                    <label class="grid gap-2 text-sm font-semibold text-slate-700">
+                                        <span>{{ $field['label'] }}</span>
+                                        <input type="hidden" name="custom_keys[{{ $i }}]" value="{{ $field['label'] }}">
+                                        <input class="min-h-11 rounded-lg border border-slate-300 bg-white px-3.5 font-normal focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" name="custom_values[{{ $i }}]" value="{{ old('custom_values.'.$i, $field['value']) }}">
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5">
                         <label class="grid gap-2 text-sm font-semibold text-slate-700">
                             <span>Masukan admin <span class="font-normal text-slate-400">(opsional)</span></span>
@@ -150,7 +205,6 @@
                 <dl class="mt-2 divide-y divide-slate-200">
                     @foreach ([
                         ['Nama', $report->reporter_name],
-                        ['Email', $report->reporter_email ?: 'Tidak diisi'],
                         ['Telepon', $report->reporter_phone ?: 'Tidak diisi'],
                     ] as [$label, $value])
                         <div class="grid grid-cols-[5rem_minmax(0,1fr)] gap-3 py-2.5">
