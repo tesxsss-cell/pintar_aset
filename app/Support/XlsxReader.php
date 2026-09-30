@@ -342,3 +342,4 @@ class XlsxReader
         return $this->maxCol;
     }
 }
+

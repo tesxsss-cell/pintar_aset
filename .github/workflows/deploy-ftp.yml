@@ -147,5 +147,17 @@ jobs:
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
+            # Regenerasi autoloader Composer agar kelas/service baru
+            # (mis. App\Services\AssetImportService, App\Support\XlsxReader)
+            # langsung dikenali tanpa perlu jalankan perintah manual.
+            if command -v composer >/dev/null 2>&1; then
+              composer dump-autoload --optimize --no-interaction
+            elif [ -f composer.phar ]; then
+              php composer.phar dump-autoload --optimize --no-interaction
+            else
+              echo "PERINGATAN: composer tidak ditemukan, melewati dump-autoload."
+              echo "Kelas baru mungkin tidak dikenali sampai autoloader diperbarui."
+            fi
+
             php artisan migrate --force --no-interaction
             php artisan optimize:clear
