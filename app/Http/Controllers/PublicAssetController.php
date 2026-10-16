@@ -111,6 +111,13 @@ class PublicAssetController extends Controller
         $search = trim($request->string('q')->toString());
 
         $reports = AssetUpdateReport::query()
+            // Halaman publik tidak mengambil identitas pelapor, foto, atau catatan internal.
+            ->select([
+                'id', 'asset_id', 'reason', 'status', 'created_at',
+                'proposed_name', 'proposed_owner', 'proposed_location',
+                'proposed_condition', 'proposed_category', 'proposed_description',
+                'proposed_metadata',
+            ])
             ->with('asset:id,slug,code,name')
             ->when($search !== '', function ($query) use ($search): void {
                 $query->whereHas('asset', function ($assetQuery) use ($search): void {
@@ -120,7 +127,8 @@ class PublicAssetController extends Controller
                 });
             })
             ->latest()
-            ->paginate(15)
+            ->orderByDesc('id')
+            ->paginate(10)
             ->withQueryString();
 
         return view('public.report-status', compact('reports', 'search'));

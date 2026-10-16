@@ -8,8 +8,8 @@
         @foreach ([null => 'Semua', 'pending' => 'Menunggu', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'] as $status => $label)
             <a href="{{ $status ? route('admin.reports.index', ['status' => $status]) : route('admin.reports.index') }}" @class([
                 'min-h-10 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold',
-                'bg-slate-900 text-white' => request('status') === $status,
-                'text-slate-600 hover:bg-slate-50' => request('status') !== $status,
+                'bg-slate-900 text-white' => (request('status') ?: '') === (string) $status,
+                'text-slate-600 hover:bg-slate-50' => (request('status') ?: '') !== (string) $status,
             ])>{{ $label }}</a>
         @endforeach
     </nav>
@@ -66,6 +66,9 @@
             </table>
         </div>
 
-        <div class="border-t border-slate-200 p-4 sm:px-5">{{ $reports->links() }}</div>
+        <div class="border-t border-slate-200 p-4 sm:px-5">
+            <p class="mb-3 text-xs text-slate-500">Menampilkan {{ $reports->firstItem() ?? 0 }}–{{ $reports->lastItem() ?? 0 }} dari {{ $reports->total() }} laporan · maksimal 10 per halaman.</p>
+            {{ $reports->onEachSide(1)->links() }}
+        </div>
     </section>
 @endsection

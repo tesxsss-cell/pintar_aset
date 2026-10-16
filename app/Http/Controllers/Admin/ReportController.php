@@ -24,6 +24,7 @@ class ReportController extends Controller
                 fn ($query) => $query->where('status', $request->string('status')),
             )
             ->latest()
+            ->orderByDesc('id')
             ->paginate(10)
             ->withQueryString();
 

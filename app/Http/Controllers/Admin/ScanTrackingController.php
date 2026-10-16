@@ -12,41 +12,53 @@ class ScanTrackingController extends Controller
 {
     public function index(Request $request): Response
     {
-        $period = in_array($request->string('period')->toString(), ['today', 'month', '3months'], true)
-            ? $request->string('period')->toString()
-            : 'month';
+        $period = $request->string('period')->toString();
+        $period = in_array($period, ['today', 'month', '3months'], true) ? $period : 'month';
+        $scanStatus = $request->string('scan_status')->toString();
+        $scanStatus = in_array($scanStatus, ['all', 'scanned', 'unscanned'], true) ? $scanStatus : 'all';
 
         $timezone = config('qr_tracking.timezone');
         $today = now($timezone)->startOfDay();
-        $starts = [
-            'today' => $today->copy(),
-            'month' => $today->copy()->startOfMonth(),
-            // Bulan berjalan dan dua bulan sebelumnya, tanpa month overflow.
-            '3months' => $today->copy()->startOfMonth()->subMonthsNoOverflow(2),
+        $monthStart = $today->copy()->startOfMonth();
+        $ranges = [
+            'today' => [$today->copy(), $today->copy()],
+            'month' => [$monthStart->copy(), $today->copy()],
+            // Tiga bulan kalender penuh sebelum bulan berjalan (tidak termasuk bulan ini).
+            '3months' => [
+                $monthStart->copy()->subMonthsNoOverflow(3),
+                $monthStart->copy()->subDay(),
+            ],
         ];
-        $startDate = $starts[$period]->toDateString();
-        $endDate = $today->toDateString();
+        [$start, $end] = $ranges[$period];
+        $startDate = $start->toDateString();
+        $endDate = $end->toDateString();
         $periodLabel = match ($period) {
             'today' => 'Hari ini',
-            '3months' => '3 bulan terakhir',
+            '3months' => '3 bulan sebelumnya',
             default => 'Bulan ini',
         };
-        $dateRange = $starts[$period]->format('d/m/Y').' – '.$today->format('d/m/Y');
+        $scanStatusLabel = match ($scanStatus) {
+            'scanned' => 'Sudah discan',
+            'unscanned' => 'Belum discan',
+            default => 'Semua status',
+        };
+        $dateRange = $start->format('d/m/Y').' – '.$end->format('d/m/Y');
 
-        // Log sebelum migrasi tidak punya identitas harian yang dapat diverifikasi.
+        // Kartu ringkasan mencakup semua aset, tidak bergantung pada filter status tabel.
         $summary = [];
-        foreach ($starts as $key => $start) {
+        foreach ($ranges as $key => [$rangeStart, $rangeEnd]) {
             $summary[$key] = AssetScan::query()
-                ->dailyBetween($start->toDateString(), $endDate)->count();
+                ->dailyBetween($rangeStart->toDateString(), $rangeEnd->toDateString())->count();
         }
 
+        // Gunakan scope dan batas tanggal yang sama untuk hitungan dan filter.
+        $inPeriod = fn ($query) => $query->dailyBetween($startDate, $endDate);
         $assets = Asset::query()
             ->select(['id', 'slug', 'code', 'name', 'category', 'location'])
-            ->withCount([
-                'scanEvents as scan_count' => fn ($query) => $query
-                    ->dailyBetween($startDate, $endDate),
-            ])
-            ->orderByDesc('scan_count')->orderBy('name')
+            ->withCount(['scanEvents as scan_count' => $inPeriod])
+            ->when($scanStatus === 'scanned', fn ($query) => $query->whereHas('scanEvents', $inPeriod))
+            ->when($scanStatus === 'unscanned', fn ($query) => $query->whereDoesntHave('scanEvents', $inPeriod))
+            ->orderByDesc('scan_count')->orderBy('name')->orderBy('id')
             ->paginate(10)->withQueryString();
 
         $totalScans = $summary[$period];
@@ -57,8 +69,8 @@ class ScanTrackingController extends Controller
         })->count();
 
         return response()->view('admin.scan-tracking.index', compact(
-            'assets', 'period', 'periodLabel', 'totalScans', 'scannedAssets',
-            'summary', 'timezone', 'dateRange', 'legacyScanCount',
+            'assets', 'period', 'periodLabel', 'scanStatus', 'scanStatusLabel',
+            'totalScans', 'scannedAssets', 'summary', 'timezone', 'dateRange', 'legacyScanCount',
         ))->header('Cache-Control', 'private, no-store, max-age=0');
     }
 }
