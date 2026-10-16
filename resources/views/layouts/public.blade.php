@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-aset.png') }}">
     <title>@yield('title', 'Pintar Aset')</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -12,9 +13,7 @@
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900 antialiased">
     <header class="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 px-4 py-5 sm:px-6 sm:py-7">
         <a class="flex min-w-0 items-center gap-3" href="{{ url('/') }}">
-            <span class="grid size-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-                PA
-            </span>
+            <img class="size-10 shrink-0 object-contain" src="{{ asset('images/logo-aset.png') }}" alt="Logo Pintar Aset">
             <span class="min-w-0">
                 <strong class="block truncate text-base">Pintar Aset</strong>
                 <span class="hidden text-xs text-slate-500 sm:block">Informasi inventaris</span>

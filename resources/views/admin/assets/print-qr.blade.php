@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-aset.png') }}">
     <title>Cetak semua QR aset · Pintar Aset</title>
 
     @vite(['resources/css/app.css'])
@@ -80,6 +81,7 @@
             <section class="print-sheet shadow-sm print:shadow-none" aria-label="Lembar {{ $pageNumber + 1 }}">
                 @foreach ($pageAssets as $asset)
                     <article class="qr-label flex flex-col items-center justify-center overflow-hidden rounded-[2mm] border border-slate-300 p-[2mm] text-center print:rounded-none">
+                        <img src="{{ asset('images/logo-aset.png') }}" alt="Logo Pintar Aset" style="width: 5mm; height: 5mm; object-fit: contain; margin-bottom: 1mm;">
                         <img class="qr-image shrink-0" src="{{ route('assets.qr', $asset) }}" alt="QR {{ $asset->name }}" width="520" height="520">
                         <p class="mt-[1mm] max-w-full truncate text-[7pt] font-bold uppercase tracking-[0.08em] text-slate-500">{{ $asset->code }}</p>
                         <h2 class="mt-[0.5mm] max-w-full truncate text-[8pt] font-bold leading-tight text-slate-950">{{ $asset->name }}</h2>

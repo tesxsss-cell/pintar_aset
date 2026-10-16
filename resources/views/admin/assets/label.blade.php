@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-aset.png') }}">
     <title>Label {{ $asset->code }}</title>
 
     @vite(['resources/css/app.css'])
@@ -111,9 +112,7 @@
     <main class="flex justify-center p-4 print:block print:p-0">
         <article class="print-label flex shrink-0 flex-col items-center justify-center overflow-hidden border-2 border-slate-900 bg-white p-[4mm] text-center">
             <header class="flex items-center justify-center gap-[2mm]">
-                <span class="grid size-[7mm] place-items-center rounded-[1.5mm] bg-blue-600 text-[8pt] font-bold text-white">
-                    PA
-                </span>
+                <img class="size-[7mm] shrink-0 object-contain" src="{{ asset('images/logo-aset.png') }}" alt="Logo Pintar Aset">
                 <strong class="text-[8pt] uppercase tracking-[0.12em]">Pintar Aset</strong>
             </header>
 

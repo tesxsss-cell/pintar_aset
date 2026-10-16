@@ -4,26 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Asset;
 use App\Models\AssetUpdateReport;
+use App\Services\QrScanTracker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class PublicAssetController extends Controller
 {
-    public function show(Request $request, Asset $asset): View
+    public function show(Request $request, Asset $asset, QrScanTracker $tracker): Response
     {
         abort_unless($asset->active, 404);
 
-        if ($request->string('source')->toString() === 'qr') {
-            $asset->scanEvents()->create([
-                'ip_hash' => $request->ip() ? hash('sha256', $request->ip().config('app.key')) : null,
-                'user_agent' => Str::limit((string) $request->userAgent(), 500, ''),
-                'scanned_at' => now(),
-            ]);
+        if ($request->isMethod('GET') && $request->string('source')->toString() === 'qr') {
+            $tracker->record($request, $asset);
         }
 
-        return view('public.asset', compact('asset'));
+        // Jangan sajikan halaman scan dari cache HTTP pada hari berikutnya.
+        return response()->view('public.asset', compact('asset'))
+            ->header('Cache-Control', 'private, no-store, max-age=0');
     }
 
     public function report(Asset $asset): View

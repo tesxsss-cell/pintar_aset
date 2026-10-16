@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-aset.png') }}">
     <title>Masuk · Pintar Aset</title>
 
     @vite(['resources/css/app.css'])
@@ -12,9 +13,7 @@
     <main class="grid min-h-screen place-items-center px-4 py-8">
         <section class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <a class="flex items-center gap-3" href="{{ url('/') }}">
-                <span class="grid size-11 place-items-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-                    PA
-                </span>
+                <img class="size-11 shrink-0 object-contain" src="{{ asset('images/logo-aset.png') }}" alt="Logo Pintar Aset">
                 <span>
                     <strong class="block text-base">Pintar Aset</strong>
                     <span class="block text-xs text-slate-500">Inventaris kantor</span>

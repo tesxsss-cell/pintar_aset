@@ -6,21 +6,31 @@
 @section('content')
     <div class="grid gap-6">
         <section class="grid gap-4 sm:grid-cols-2">
+            @foreach (['today' => 'Hari ini', 'month' => 'Bulan ini', '3months' => '3 bulan terakhir'] as $key => $label)
+                <a href="{{ route('admin.scan-tracking.index', ['period' => $key]) }}" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:bg-slate-50" @if ($period === $key) aria-current="true" @endif>
+                    <p class="text-sm text-slate-500">Total scan · {{ $label }}</p>
+                    <p class="mt-2 text-3xl font-bold text-slate-950">{{ number_format($summary[$key]) }}</p>
+                    <p class="mt-1 text-xs text-slate-500">Akumulasi pengguna unik per aset per hari</p>
+                </a>
+            @endforeach
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm text-slate-500">Total scan · {{ $periodLabel }}</p>
-                <p class="mt-2 text-3xl font-bold text-slate-950">{{ number_format($totalScans) }}</p>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                <p class="text-sm text-slate-500">Aset yang dipindai</p>
+                <p class="text-sm text-slate-500">Aset yang dipindai · {{ $periodLabel }}</p>
                 <p class="mt-2 text-3xl font-bold text-slate-950">{{ number_format($scannedAssets) }}</p>
             </div>
         </section>
+
+        <div class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            <p>Satu pengguna dihitung maksimal <strong>1 kali per aset per hari</strong>. Refresh atau membuka ulang pada hari yang sama tidak menambah scan; pada hari berikutnya dapat dihitung lagi.</p>
+            <p class="mt-2">Tanpa login, pengguna dikenali dari cookie browser. Browser/perangkat berbeda atau cookie yang dihapus dapat dihitung sebagai pengguna baru.</p>
+            <p class="mt-2">Batas hari: <strong>{{ $timezone }}</strong>. Bulan ini = bulan kalender berjalan; 3 bulan terakhir = bulan berjalan dan dua bulan sebelumnya.</p>
+            <p class="mt-2">Statistik unik dimulai setelah pembaruan ini dipasang. Log lama tetap disimpan, tetapi tidak dimasukkan karena belum memiliki identitas harian.</p>
+        </div>
 
         <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <header class="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-bold text-slate-950">Jumlah scan per aset</h2>
-                    <p class="mt-1 text-sm text-slate-500">Hanya kunjungan yang berasal dari QR aset yang dihitung.</p>
+                    <p class="mt-1 text-sm text-slate-500">URL QR yang dibuka dengan parameter source=qr dihitung, termasuk jika URL tersebut dibagikan. Periode tabel: {{ $dateRange }} ({{ $timezone }}).</p>
                 </div>
                 <form method="GET">
                     <label class="sr-only" for="period">Periode</label>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-aset.png') }}">
     <title>@yield('title', 'Pintar Aset')</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -18,9 +19,7 @@
         >
             <div class="flex items-center justify-between gap-4 px-2">
                 <a class="flex min-w-0 items-center gap-3" href="{{ route('admin.dashboard') }}">
-                    <span class="grid size-10 shrink-0 place-items-center rounded-lg bg-blue-600 text-sm font-bold">
-                        PA
-                    </span>
+                    <img class="size-10 shrink-0 object-contain" src="{{ asset('images/logo-aset.png') }}" alt="Logo Pintar Aset">
                     <span class="min-w-0">
                         <strong class="block truncate text-base">Pintar Aset</strong>
                         <span class="block truncate text-xs text-slate-400">Inventaris kantor</span>
