@@ -306,3 +306,4 @@ class AssetController extends Controller
         return $photos;
     }
 }
+
