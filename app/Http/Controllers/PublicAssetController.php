@@ -16,7 +16,9 @@ class PublicAssetController extends Controller
     {
         abort_unless($asset->active, 404);
 
-        if ($request->isMethod('GET') && $request->string('source')->toString() === 'qr') {
+        // Hitung pembukaan URL publik aset, dengan atau tanpa ?source=qr.
+        // Endpoint detail admin, laporan, dan gambar QR tidak melalui method ini.
+        if ($request->isMethod('GET')) {
             $tracker->record($request, $asset);
         }
 

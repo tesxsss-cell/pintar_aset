@@ -1,4 +1,4 @@
-name: Deploy Incremental via Rsync SSH ke Namecheap
+name: Deploy Incremental via FTPS ke Namecheap
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build, rsync, dan migrate
+    name: Build, upload, dan migrate
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -41,42 +41,74 @@ jobs:
       - name: Hapus penanda Vite development
         run: rm -f public/hot
 
-      # -----------------------------------------------------------------
-      # Upload via Rsync over SSH (Menggantikan FTP yang sering terputus)
-      # Mempertahankan file storage (gambar/foto upload) & .env di server
-      # -----------------------------------------------------------------
-      - name: Upload perubahan via Rsync
-        env:
-          SSHPASS: ${{ secrets.SSH_PASSWORD }}
-          SSH_PORT: ${{ secrets.SSH_PORT || '21098' }}
-          SSH_USER: ${{ secrets.SSH_USERNAME }}
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_TARGET: ${{ secrets.SSH_APP_PATH || '/home/clouwkvx/public_html/pintar_aset' }}
-        run: |
-          sudo apt-get update && sudo apt-get install -y sshpass rsync
+      - name: Upload perubahan via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          timeout: 300000
+          log-level: verbose
+          local-dir: ./
+          server-dir: ./
+          dangerous-clean-slate: false
+          state-name: .ftp-deploy-sync-state.json
 
-          sshpass -e rsync -avz --delete \
-            -e "ssh -p $SSH_PORT -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=5" \
-            --exclude '.git*' \
-            --exclude '.github' \
-            --exclude 'node_modules' \
-            --exclude 'vendor' \
-            --exclude '.env*' \
-            --exclude 'storage/app/public/**' \
-            --exclude 'storage/app/**' \
-            --exclude 'storage/framework/cache/**' \
-            --exclude 'storage/framework/sessions/**' \
-            --exclude 'storage/framework/views/**' \
-            --exclude 'storage/logs/**' \
-            --exclude 'bootstrap/cache/**' \
-            --exclude 'public/storage' \
-            --exclude 'tests' \
-            ./ "$SSH_USER@$SSH_HOST:$SSH_TARGET/"
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            *.log
+            **/*.log
+            .DS_Store
+            **/.DS_Store
+            .env
+            .env.backup
+            .env.production
+            .phpactor.json
+            .phpunit.result.cache
+            .codex/**
+            .cursor/**
+            .idea/**
+            .nova/**
+            .phpunit.cache/**
+            .vscode/**
+            .zed/**
+            auth.json
+            node_modules/**
+            **/node_modules/**
+            vendor/**
+            **/vendor/**
+            _ide_helper.php
+            **/_ide_helper.php
+            public/fonts-manifest.dev.json
+            public/hot
+            public/hot/**
+            public/storage
+            public/storage/**
+            storage/*.key
+            storage/pail/**
+            storage/logs/**
+            storage/framework/cache/**
+            storage/framework/sessions/**
+            storage/framework/views/**
+            storage/app/**
+            bootstrap/cache/**
+            Homestead.json
+            **/Homestead.json
+            Homestead.yaml
+            **/Homestead.yaml
+            Thumbs.db
+            **/Thumbs.db
+            tests/**
 
-      # -----------------------------------------------------------------
-      # Jalankan Migration, Autoload Class/Service Baru, dan Clear Cache
-      # -----------------------------------------------------------------
-      - name: Jalankan migration dan autoload service baru
+      # Langkah ini selalu dijalankan setelah upload.
+      # Laravel hanya menjalankan migration yang belum tercatat di database.
+      # Jika tidak ada migration baru, hasilnya "Nothing to migrate" dan
+      # tidak ada perubahan pada database.
+      - name: Periksa dan jalankan migration pending
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -87,22 +119,39 @@ jobs:
           script: |
             set -e
 
-            APP_DIR="${{ secrets.SSH_APP_PATH || '/home/clouwkvx/public_html/pintar_aset' }}"
+            APP_DIR="${{ secrets.SSH_APP_PATH }}"
 
-            if [ ! -f "$APP_DIR/artisan" ]; then
-              echo "ERROR: Folder artisan tidak ditemukan di $APP_DIR"
+            if [ -z "$APP_DIR" ]; then
+              for CANDIDATE in "$HOME/public_html/pos" "$HOME/public_html"; do
+                if [ -f "$CANDIDATE/artisan" ]; then
+                  APP_DIR="$CANDIDATE"
+                  break
+                fi
+              done
+            fi
+
+            if [ -z "$APP_DIR" ]; then
+              ARTISAN_FILE="$(find "$HOME/public_html" -maxdepth 4 -type f -name artisan -print -quit 2>/dev/null || true)"
+              if [ -n "$ARTISAN_FILE" ]; then
+                APP_DIR="$(dirname "$ARTISAN_FILE")"
+              fi
+            fi
+
+            if [ -z "$APP_DIR" ] || [ ! -f "$APP_DIR/artisan" ]; then
+              echo "ERROR: Folder aplikasi Laravel tidak ditemukan."
+              echo "Isi GitHub Secret SSH_APP_PATH dengan path folder yang berisi file artisan."
+              echo "Contoh: /home/clourvyr/public_html/pos"
               exit 1
             fi
 
             echo "Aplikasi Laravel ditemukan di: $APP_DIR"
             cd "$APP_DIR"
 
-            # Pastikan symbolic link storage untuk upload foto/gambar sudah terhubung
-            if [ ! -L "public/storage" ]; then
-              php artisan storage:link || true
-            fi
-
-            # Siapkan Composer untuk dump-autoload service baru
+            # Regenerasi autoloader Composer agar kelas/service baru
+            # (mis. App\Services\AssetImportService, App\Support\XlsxReader)
+            # langsung dikenali. Server Namecheap sering tidak punya perintah
+            # "composer" global, jadi kita cari di lokasi umum; bila tetap tidak
+            # ada, unduh composer.phar sementara agar dump-autoload tetap jalan.
             COMPOSER_CMD=""
             if command -v composer >/dev/null 2>&1; then
               COMPOSER_CMD="composer"
@@ -123,14 +172,8 @@ jobs:
               COMPOSER_CMD="php composer.phar"
             fi
 
-            echo "Regenerasi autoloader Composer..."
+            echo "Memakai composer: $COMPOSER_CMD"
             $COMPOSER_CMD dump-autoload --optimize --no-interaction --no-scripts
 
-            echo "Menjalankan database migration..."
             php artisan migrate --force --no-interaction
-
-            echo "Membersihkan dan memperbarui cache konfigurasi/route..."
             php artisan optimize:clear
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache

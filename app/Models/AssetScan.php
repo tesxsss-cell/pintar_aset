@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,17 @@ class AssetScan extends Model
         return Attribute::make(
             set: fn ($value) => $value === null ? null : Carbon::parse($value)->toDateString(),
         );
+    }
+
+    /**
+     * Rentang kalender harian yang dipakai bersama oleh kartu dan tabel.
+     * Batas akhir eksklusif juga mencakup tanggal yang tersimpan sebagai midnight.
+     */
+    public function scopeDailyBetween(Builder $query, string $firstDate, string $lastDate): Builder
+    {
+        return $query->whereNotNull('visitor_hash')->whereNotNull('scan_date')
+            ->where('scan_date', '>=', $firstDate)
+            ->where('scan_date', '<', Carbon::parse($lastDate)->addDay()->toDateString());
     }
 
     public function asset(): BelongsTo

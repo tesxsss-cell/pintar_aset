@@ -23,14 +23,21 @@
             <p>Satu pengguna dihitung maksimal <strong>1 kali per aset per hari</strong>. Refresh atau membuka ulang pada hari yang sama tidak menambah scan; pada hari berikutnya dapat dihitung lagi.</p>
             <p class="mt-2">Tanpa login, pengguna dikenali dari cookie browser. Browser/perangkat berbeda atau cookie yang dihapus dapat dihitung sebagai pengguna baru.</p>
             <p class="mt-2">Batas hari: <strong>{{ $timezone }}</strong>. Bulan ini = bulan kalender berjalan; 3 bulan terakhir = bulan berjalan dan dua bulan sebelumnya.</p>
-            <p class="mt-2">Statistik unik dimulai setelah pembaruan ini dipasang. Log lama tetap disimpan, tetapi tidak dimasukkan karena belum memiliki identitas harian.</p>
+            <p class="mt-2">Statistik unik dimulai setelah pembaruan ini dipasang. Log lama tetap disimpan, tetapi tidak dimasukkan karena belum memiliki identitas harian. Jumlah log lama: <strong>{{ number_format($legacyScanCount) }}</strong>.</p>
+            <p class="mt-2">Membuka detail aset di halaman admin atau mengunduh gambar QR tidak menambah scan. Buka URL publik /aset/slug-aset, lalu muat ulang halaman tracking untuk melihat total terbaru.</p>
         </div>
+
+        @if ($totalScans === 0)
+            <div class="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+                Belum ada kunjungan unik yang tercatat pada periode {{ $periodLabel }}. Buka halaman publik aset aktif, kemudian muat ulang halaman ini. Jika tetap 0, pastikan file terbaru dan migrasi berada di aplikasi serta database yang sama.
+            </div>
+        @endif
 
         <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <header class="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 class="text-lg font-bold text-slate-950">Jumlah scan per aset</h2>
-                    <p class="mt-1 text-sm text-slate-500">URL QR yang dibuka dengan parameter source=qr dihitung, termasuk jika URL tersebut dibagikan. Periode tabel: {{ $dateRange }} ({{ $timezone }}).</p>
+                    <p class="mt-1 text-sm text-slate-500">Setiap pembukaan halaman publik aset dihitung, dengan atau tanpa parameter source=qr. Ini menghitung kunjungan URL, bukan bukti pemindaian kamera. Periode tabel: {{ $dateRange }} ({{ $timezone }}).</p>
                 </div>
                 <form method="GET">
                     <label class="sr-only" for="period">Periode</label>
