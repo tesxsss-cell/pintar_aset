@@ -14,7 +14,7 @@
     <div class="min-h-screen lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside
             id="sidebar"
-            class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-slate-800 bg-slate-950 px-4 py-5 text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-slate-800 bg-slate-50 px-4 py-5 text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
             aria-label="Navigasi utama"
         >
             <div class="flex items-center justify-between gap-4 px-2">
