@@ -14,7 +14,7 @@
     <div class="min-h-screen lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
         <aside
             id="sidebar"
-            class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-slate-800 bg-slate-50 px-4 py-5 text-white transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-slate-50 px-4 py-5 text-slate-800 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
             aria-label="Navigasi utama"
         >
             <div class="flex items-center justify-between gap-4 px-2">
@@ -22,12 +22,12 @@
                     <img class="size-10 shrink-0 object-contain" src="{{ asset('images/logo-aset.png') }}" alt="Logo Pintar Aset">
                     <span class="min-w-0">
                         <strong class="block truncate text-base">Pintar Aset</strong>
-                        <span class="block truncate text-xs text-slate-400">Inventaris kantor</span>
+                        <span class="block truncate text-xs text-slate-500">Inventaris kantor</span>
                     </span>
                 </a>
 
                 <button
-                    class="grid size-11 place-items-center rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white lg:hidden"
+                    class="grid size-11 place-items-center rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-800 lg:hidden"
                     type="button"
                     data-sidebar-close
                     aria-label="Tutup navigasi"
@@ -51,8 +51,8 @@
                         href="{{ route($item['route']) }}"
                         @class([
                             'flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition',
-                            'bg-white/10 text-white' => request()->routeIs($item['active']),
-                            'text-slate-400 hover:bg-white/5 hover:text-white' => ! request()->routeIs($item['active']),
+                            'bg-blue-100 text-blue-800' => request()->routeIs($item['active']),
+                            'text-slate-600 hover:bg-blue-50 hover:text-blue-800' => ! request()->routeIs($item['active']),
                         ])
                     >
                         <x-icon :name="$item['icon']" />
@@ -61,21 +61,21 @@
                 @endforeach
             </nav>
 
-            <div class="mt-auto border-t border-slate-800 pt-4">
+            <div class="mt-auto border-t border-slate-200 pt-4">
                 <div class="flex items-center gap-3 rounded-lg p-2">
-                    <span class="grid size-10 shrink-0 place-items-center rounded-full bg-slate-800 text-sm font-bold">
+                    <span class="grid size-10 shrink-0 place-items-center rounded-full bg-blue-100 text-sm font-bold text-blue-800">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </span>
 
                     <span class="min-w-0 flex-1">
                         <strong class="block truncate text-sm">{{ auth()->user()->name }}</strong>
-                        <span class="block text-xs text-slate-400">Administrator</span>
+                        <span class="block text-xs text-slate-500">Administrator</span>
                     </span>
 
                     <form method="POST" action="{{ route('admin.logout') }}">
                         @csrf
                         <button
-                            class="grid size-11 place-items-center rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white"
+                            class="grid size-11 place-items-center rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-800"
                             type="submit"
                             aria-label="Keluar"
                             title="Keluar"
