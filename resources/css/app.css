@@ -14,3 +14,45 @@
         margin: 10mm;
     }
 }
+
+/* Sidebar admin: drawer pada mobile, kolom yang dapat ditutup pada desktop. */
+.admin-sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 200ms ease, visibility 200ms ease;
+}
+
+[data-admin-layout][data-sidebar-mobile="open"] .admin-sidebar {
+    transform: translateX(0);
+    visibility: visible;
+}
+
+@media (min-width: 64rem) {
+    .admin-layout {
+        display: grid;
+        grid-template-columns: 16rem minmax(0, 1fr);
+        transition: grid-template-columns 200ms ease;
+    }
+
+    [data-admin-layout] .admin-sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    [data-admin-layout][data-sidebar-desktop="closed"] {
+        grid-template-columns: 0 minmax(0, 1fr);
+    }
+
+    [data-admin-layout][data-sidebar-desktop="closed"] .admin-sidebar {
+        transform: translateX(-100%);
+        visibility: hidden;
+        pointer-events: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-layout,
+    .admin-sidebar {
+        transition: none;
+    }
+}

@@ -11,11 +11,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-full bg-slate-50 font-sans text-slate-900 antialiased">
-    <div class="min-h-screen lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+    <div class="admin-layout min-h-screen" data-admin-layout data-sidebar-desktop="open" data-sidebar-mobile="closed">
         <aside
             id="sidebar"
-            class="fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-slate-200 bg-slate-50 px-4 py-5 text-slate-800 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+            class="admin-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-y-auto overscroll-contain border-r border-slate-200 bg-slate-50 px-4 py-5 text-slate-800 lg:sticky lg:top-0 lg:h-screen"
             aria-label="Navigasi utama"
+            inert
         >
             <div class="flex items-center justify-between gap-4 px-2">
                 <a class="flex min-w-0 items-center gap-3" href="{{ route('admin.dashboard') }}">
@@ -27,9 +28,10 @@
                 </a>
 
                 <button
-                    class="grid size-11 place-items-center rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-800 lg:hidden"
+                    class="grid size-11 shrink-0 place-items-center rounded-lg text-slate-600 hover:bg-blue-50 hover:text-blue-800"
                     type="button"
                     data-sidebar-close
+                    aria-controls="sidebar"
                     aria-label="Tutup navigasi"
                 >
                     <x-icon name="x" />
@@ -98,12 +100,13 @@
             <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
                 <div class="mx-auto flex h-20 max-w-screen-2xl items-center gap-4 px-4 sm:px-6 lg:px-8">
                     <button
-                        class="grid size-11 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 lg:hidden"
+                        class="grid size-11 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                         type="button"
                         data-sidebar-toggle
                         aria-controls="sidebar"
                         aria-expanded="false"
                         aria-label="Buka navigasi"
+                        title="Buka navigasi"
                     >
                         <x-icon name="menu" />
                     </button>

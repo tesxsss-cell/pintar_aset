@@ -98,37 +98,115 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    const layout = document.querySelector('[data-admin-layout]');
     const sidebar = document.querySelector('#sidebar');
-    const openButton = document.querySelector('[data-sidebar-toggle]');
+    const toggleButton = document.querySelector('[data-sidebar-toggle]');
     const closeButton = document.querySelector('[data-sidebar-close]');
     const backdrop = document.querySelector('[data-sidebar-backdrop]');
 
-    const setSidebarOpen = (isOpen) => {
-        if (!sidebar || !openButton || !backdrop) {
-            return;
+    if (layout && sidebar && toggleButton && backdrop) {
+        // Harus sama dengan breakpoint lg Tailwind (64rem).
+        const desktopMedia = window.matchMedia('(min-width: 64rem)');
+        const storageKey = 'pintar-aset.admin.sidebar.desktop';
+        let desktopOpen = true;
+        let mobileOpen = false;
+        let previousBodyOverflowHidden = false;
+        let mobileScrollLocked = false;
+
+        try {
+            desktopOpen = localStorage.getItem(storageKey) !== 'closed';
+        } catch {
+            // Sidebar tetap berfungsi ketika penyimpanan browser diblokir.
         }
 
-        sidebar.classList.toggle('-translate-x-full', !isOpen);
-        backdrop.classList.toggle('hidden', !isOpen);
-        document.body.classList.toggle('overflow-hidden', isOpen);
-        openButton.setAttribute('aria-expanded', String(isOpen));
-    };
+        const renderSidebar = () => {
+            const isDesktop = desktopMedia.matches;
+            const isOpen = isDesktop ? desktopOpen : mobileOpen;
+            const lockScroll = !isDesktop && mobileOpen;
 
-    openButton?.addEventListener('click', () => setSidebarOpen(true));
-    closeButton?.addEventListener('click', () => setSidebarOpen(false));
-    backdrop?.addEventListener('click', () => setSidebarOpen(false));
+            layout.dataset.sidebarDesktop = desktopOpen ? 'open' : 'closed';
+            layout.dataset.sidebarMobile = mobileOpen ? 'open' : 'closed';
+            sidebar.inert = !isOpen;
+            sidebar.setAttribute('aria-hidden', String(!isOpen));
+            backdrop.classList.toggle('hidden', !lockScroll);
+            toggleButton.setAttribute('aria-expanded', String(isOpen));
+            toggleButton.setAttribute('aria-label', isOpen ? 'Tutup navigasi' : 'Buka navigasi');
+            toggleButton.setAttribute('title', isOpen ? 'Tutup navigasi' : 'Buka navigasi');
 
-    window.addEventListener('resize', () => {
-        if (window.innerWidth >= 1024) {
-            setSidebarOpen(false);
-        }
-    });
+            if (lockScroll && !mobileScrollLocked) {
+                previousBodyOverflowHidden = document.body.classList.contains('overflow-hidden');
+                document.body.classList.add('overflow-hidden');
+                mobileScrollLocked = true;
+            } else if (!lockScroll && mobileScrollLocked) {
+                document.body.classList.toggle('overflow-hidden', previousBodyOverflowHidden);
+                mobileScrollLocked = false;
+            }
+        };
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            setSidebarOpen(false);
-        }
-    });
+        const setSidebarOpen = (isOpen) => {
+            if (desktopMedia.matches) {
+                desktopOpen = isOpen;
+                try {
+                    localStorage.setItem(storageKey, isOpen ? 'open' : 'closed');
+                } catch {
+                    // Preferensi hanya berlaku selama halaman ini dibuka.
+                }
+            } else {
+                mobileOpen = isOpen;
+            }
+
+            // Jangan biarkan fokus berada pada elemen yang akan disembunyikan.
+            if (!isOpen && sidebar.contains(document.activeElement)) {
+                toggleButton.focus();
+            }
+            renderSidebar();
+
+            if (isOpen && !desktopMedia.matches) {
+                closeButton?.focus();
+            }
+        };
+
+        toggleButton.addEventListener('click', () => {
+            setSidebarOpen(!(desktopMedia.matches ? desktopOpen : mobileOpen));
+        });
+        closeButton?.addEventListener('click', () => setSidebarOpen(false));
+        backdrop.addEventListener('click', () => setSidebarOpen(false));
+
+        desktopMedia.addEventListener('change', () => {
+            // Drawer mobile selalu direset, tanpa mengubah preferensi desktop.
+            mobileOpen = false;
+            if (sidebar.contains(document.activeElement) && !(desktopMedia.matches && desktopOpen)) {
+                toggleButton.focus();
+            }
+            renderSidebar();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const isOpen = desktopMedia.matches ? desktopOpen : mobileOpen;
+            if (event.key === 'Escape' && isOpen) {
+                setSidebarOpen(false);
+                toggleButton.focus();
+            }
+
+            // Fokus keyboard tetap berada di drawer selama menu mobile terbuka.
+            if (event.key === 'Tab' && !desktopMedia.matches && mobileOpen) {
+                const focusable = [...sidebar.querySelectorAll(
+                    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+                )].filter((element) => element.getClientRects().length > 0);
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last?.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first?.focus();
+                }
+            }
+        });
+
+        renderSidebar();
+    }
 
     document.addEventListener('click', (event) => {
         const button = event.target.closest('[data-confirm]');
