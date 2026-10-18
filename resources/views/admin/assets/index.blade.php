@@ -75,10 +75,12 @@
                                 <div class="flex justify-end gap-2">
                                     <a class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50" href="{{ route('admin.assets.show', $asset) }}" title="Lihat detail aset"><x-icon name="chevron-right" size="16" />Lihat</a>
                                     <a class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.edit', $asset) }}" title="Edit aset"><x-icon name="edit" size="16" />Edit</a>
-                                    <form method="POST" action="{{ route('admin.assets.destroy', $asset) }}">
+                                    <form method="POST" action="{{ route('admin.assets.destroy', $asset) }}"
+                                        data-confirm="Hapus aset &quot;{{ $asset->name }}&quot; ({{ $asset->code }})? Tindakan ini tidak dapat dibatalkan."
+                                        data-confirm-title="Hapus aset secara permanen?" data-confirm-label="Ya, hapus aset" data-confirm-tone="danger">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100" type="submit" data-confirm="Hapus aset {{ $asset->name }}? Tindakan ini tidak dapat dibatalkan." title="Hapus aset"><x-icon name="trash" size="16" />Hapus</button>
+                                        <button class="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100" type="submit" title="Hapus aset"><x-icon name="trash" size="16" />Hapus</button>
                                     </form>
                                 </div>
                             </td>

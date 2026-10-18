@@ -157,5 +157,24 @@
             </main>
         </div>
     </div>
+    <dialog id="confirmation-dialog" class="confirmation-dialog" aria-labelledby="confirmation-title" aria-describedby="confirmation-description" data-tone="danger">
+        <div class="confirmation-card">
+            <div class="confirmation-topbar">
+                <span class="confirmation-icon" aria-hidden="true">
+                    <x-icon name="alert-circle" size="26" />
+                </span>
+                <button class="confirmation-dismiss" type="button" data-confirm-cancel aria-label="Tutup konfirmasi">
+                    <x-icon name="x" size="20" />
+                </button>
+            </div>
+            <p class="confirmation-eyebrow">Konfirmasi tindakan</p>
+            <h2 id="confirmation-title" class="confirmation-title">Lanjutkan tindakan ini?</h2>
+            <p id="confirmation-description" class="confirmation-description"></p>
+            <div class="confirmation-actions">
+                <button class="confirmation-button confirmation-button-cancel" type="button" data-confirm-cancel autofocus>Batal</button>
+                <button class="confirmation-button confirmation-button-submit" type="button" data-confirm-accept>Ya, lanjutkan</button>
+            </div>
+        </div>
+    </dialog>
 </body>
 </html>

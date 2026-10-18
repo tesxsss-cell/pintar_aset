@@ -182,6 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         document.addEventListener('keydown', (event) => {
+            if (document.querySelector('#confirmation-dialog[open]')) {
+                return;
+            }
             const isOpen = desktopMedia.matches ? desktopOpen : mobileOpen;
             if (event.key === 'Escape' && isOpen) {
                 setSidebarOpen(false);
@@ -208,11 +211,138 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSidebar();
     }
 
-    document.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-confirm]');
+    const confirmationDialog = document.querySelector('#confirmation-dialog');
+    const confirmationTitle = document.querySelector('#confirmation-title');
+    const confirmationDescription = document.querySelector('#confirmation-description');
+    const acceptButton = confirmationDialog?.querySelector('[data-confirm-accept]');
+    const cancelButtons = confirmationDialog?.querySelectorAll('[data-confirm-cancel]');
+    const approvedForms = new WeakSet();
+    const submittingForms = new WeakSet();
+    let pendingConfirmation = null;
 
-        if (button && !window.confirm(button.dataset.confirm)) {
+    if (confirmationDialog && confirmationTitle && confirmationDescription && acceptButton) {
+        const cancelConfirmation = () => {
+            pendingConfirmation = null;
+            confirmationDialog.close();
+            document.documentElement.classList.remove('has-confirmation-modal');
+        };
+
+        cancelButtons.forEach((button) => button.addEventListener('click', cancelConfirmation));
+        confirmationDialog.addEventListener('cancel', (event) => {
             event.preventDefault();
-        }
-    });
+            cancelConfirmation();
+        });
+        confirmationDialog.addEventListener('keydown', (event) => {
+            if (event.key !== 'Tab') {
+                return;
+            }
+            const buttons = [...confirmationDialog.querySelectorAll('button:not([disabled])')];
+            const first = buttons[0];
+            const last = buttons[buttons.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last?.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first?.focus();
+            }
+        });
+        confirmationDialog.addEventListener('close', () => {
+            if (!confirmationDialog.open) {
+                document.documentElement.classList.remove('has-confirmation-modal');
+                pendingConfirmation = null;
+            }
+        });
+        confirmationDialog.addEventListener('click', (event) => {
+            const rect = confirmationDialog.getBoundingClientRect();
+            if (event.target === confirmationDialog && (
+                event.clientX < rect.left || event.clientX > rect.right ||
+                event.clientY < rect.top || event.clientY > rect.bottom
+            )) {
+                cancelConfirmation();
+            }
+        });
+
+        // Event submit mencakup klik tombol maupun Enter dan baru berjalan
+        // setelah validasi HTML (misalnya alasan penolakan wajib diisi) lolos.
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || event.defaultPrevented) {
+                return;
+            }
+            const submitter = event.submitter;
+            const config = submitter?.hasAttribute('data-confirm') ? submitter :
+                (form.hasAttribute('data-confirm') ? form : null);
+            if (!config) {
+                return;
+            }
+            if (submittingForms.has(form)) {
+                event.preventDefault();
+                return;
+            }
+            if (approvedForms.has(form)) {
+                approvedForms.delete(form);
+                submittingForms.add(form);
+                window.setTimeout(() => {
+                    if (event.defaultPrevented) {
+                        submittingForms.delete(form);
+                        return;
+                    }
+                    form.setAttribute('aria-busy', 'true');
+                    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((button) => {
+                        button.disabled = true;
+                    });
+                }, 0);
+                return;
+            }
+
+            event.preventDefault();
+            if (confirmationDialog.open) {
+                return;
+            }
+            pendingConfirmation = { form, submitter };
+            confirmationTitle.textContent = config.dataset.confirmTitle || 'Lanjutkan tindakan ini?';
+            confirmationDescription.textContent = config.dataset.confirm || 'Pastikan data sudah benar sebelum melanjutkan.';
+            acceptButton.textContent = config.dataset.confirmLabel || 'Ya, lanjutkan';
+            confirmationDialog.dataset.tone = config.dataset.confirmTone === 'success' ? 'success' : 'danger';
+            document.documentElement.classList.add('has-confirmation-modal');
+            confirmationDialog.showModal();
+            confirmationDialog.querySelector('.confirmation-button-cancel')?.focus();
+        });
+
+        acceptButton.addEventListener('click', () => {
+            if (!pendingConfirmation) {
+                return;
+            }
+            const { form, submitter } = pendingConfirmation;
+            pendingConfirmation = null;
+            confirmationDialog.close();
+            document.documentElement.classList.remove('has-confirmation-modal');
+            if (!form.isConnected || !form.reportValidity()) {
+                return;
+            }
+            approvedForms.add(form);
+            // requestSubmit tetap mempertahankan validasi, CSRF, _method,
+            // dan nilai tombol submit; tidak menggunakan form.submit().
+            try {
+                if (submitter && submitter.form === form && !submitter.disabled) {
+                    form.requestSubmit(submitter);
+                } else {
+                    form.requestSubmit();
+                }
+            } finally {
+                approvedForms.delete(form);
+            }
+        });
+
+        window.addEventListener('pageshow', () => {
+            document.querySelectorAll('form[aria-busy="true"]').forEach((form) => {
+                submittingForms.delete(form);
+                form.removeAttribute('aria-busy');
+                form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach((button) => {
+                    button.disabled = false;
+                });
+            });
+        });
+    }
 });

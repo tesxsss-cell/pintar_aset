@@ -4,7 +4,14 @@
 @section('heading', 'Detail aset')
 
 @section('content')
-    <div class="mb-5 grid gap-3 sm:flex sm:justify-end">
+    <div class="mb-5 grid gap-3 sm:flex sm:flex-wrap sm:justify-end">
+        <a
+            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:mr-auto"
+            href="{{ route('admin.assets.index') }}"
+        >
+            <x-icon name="arrow-left" size="18" />
+            Kembali ke daftar aset
+        </a>
         <a
             class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             href="{{ route('assets.public', $asset) }}"

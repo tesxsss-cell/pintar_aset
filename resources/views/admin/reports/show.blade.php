@@ -44,6 +44,18 @@
     @endphp
 
     <div class="mx-auto grid max-w-5xl gap-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <a class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="{{ route('admin.reports.index') }}">
+                <x-icon name="arrow-left" size="18" />
+                Kembali ke laporan perubahan
+            </a>
+            <a class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-100" href="{{ route('admin.assets.show', $report->asset) }}">
+                <x-icon name="package" size="18" />
+                Lihat detail aset
+            </a>
+        </div>
+
+        @if ($report->status === 'pending')
         <section @class([
             'rounded-xl border p-5 shadow-sm sm:p-6',
             'border-blue-200 bg-blue-50/70' => $hasChanges,
@@ -92,12 +104,22 @@
             @endif
         </section>
 
+        @endif
+
         <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
             <header class="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">Mode edit</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-blue-600">{{ $report->status === 'pending' ? 'Mode edit' : 'Data aset terkini' }}</p>
                     <h2 class="mt-1 text-xl font-bold text-slate-950">Informasi aset</h2>
-                    <p class="mt-1 text-sm text-slate-500">Nilai usulan sudah diterapkan otomatis pada kolom terkait dan masih dapat disesuaikan.</p>
+                    <p class="mt-1 text-sm leading-6 text-slate-500">
+                        @if ($report->status === 'pending')
+                            Nilai usulan sudah diterapkan otomatis pada kolom terkait dan masih dapat disesuaikan.
+                        @elseif ($report->status === 'approved')
+                            Laporan telah disetujui. Berikut informasi aset terkini yang tersimpan di sistem.
+                        @else
+                            Laporan telah ditolak. Usulan pada laporan ini tidak diterapkan; berikut informasi aset terkini yang tersimpan di sistem.
+                        @endif
+                    </p>
                 </div>
                 <span @class([
                     'inline-flex self-start rounded-full px-2.5 py-1 text-xs font-semibold',
@@ -110,7 +132,9 @@
             </header>
 
             @if ($report->status === 'pending')
-                <form class="mt-6 grid gap-6" method="POST" action="{{ route('admin.reports.approve', $report) }}">
+                <form class="mt-6 grid gap-6" method="POST" action="{{ route('admin.reports.approve', $report) }}"
+                    data-confirm="Informasi pada formulir ini akan disimpan sebagai data aset. Pastikan semua perubahan sudah benar sebelum melanjutkan."
+                    data-confirm-title="Setujui perubahan aset?" data-confirm-label="Ya, setujui perubahan" data-confirm-tone="success">
                     @csrf
                     @method('PATCH')
 
@@ -165,13 +189,60 @@
                             <span>Masukan admin <span class="font-normal text-slate-400">(opsional)</span></span>
                             <textarea class="min-h-24 rounded-lg border border-emerald-200 bg-white p-3 font-normal focus:border-emerald-600 focus:outline-none focus:ring-4 focus:ring-emerald-100" name="admin_note" placeholder="Tambahkan catatan untuk keputusan ini">{{ old('admin_note') }}</textarea>
                         </label>
-                        <button class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700" type="submit" data-confirm="Setujui laporan dan simpan informasi aset ini?">
+                        <button class="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700" type="submit">
                             <x-icon name="check-circle" size="18" />
                             Setujui perubahan
                         </button>
                     </div>
                 </form>
             @else
+                <div class="mt-6 grid gap-6">
+                    @if ($report->asset->image_path)
+                        <div class="max-w-md overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                            <img class="aspect-video w-full object-contain p-3" src="{{ asset('storage/'.$report->asset->image_path) }}" alt="Foto {{ $report->asset->name }}">
+                        </div>
+                    @endif
+
+                    <dl class="grid gap-x-6 sm:grid-cols-2">
+                        @foreach ([
+                            ['Kode aset', $report->asset->code],
+                            ['Nama barang', $report->asset->name],
+                            ['Pemilik / penanggung jawab', $report->asset->owner],
+                            ['Lokasi', $report->asset->location],
+                            ['Kategori', $report->asset->category],
+                            ['Kondisi', $report->asset->condition],
+                            ['Status aset', $report->asset->active ? 'Aktif' : 'Nonaktif'],
+                            ['Tanggal perolehan', $report->asset->acquired_at?->translatedFormat('d M Y')],
+                        ] as [$label, $value])
+                            <div class="min-w-0 border-b border-slate-200 py-4">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $label }}</dt>
+                                <dd class="mt-2 whitespace-pre-line break-words text-sm font-semibold text-slate-900">{{ filled($value) ? $value : '—' }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <h3 class="text-sm font-bold text-slate-900">Deskripsi</h3>
+                        <p class="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{{ $report->asset->description ?: 'Belum ada deskripsi.' }}</p>
+                    </div>
+
+                    @if ($currentFields->isNotEmpty())
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">Informasi tambahan</h3>
+                            <dl class="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200">
+                                @foreach ($currentFields as $field)
+                                    <div class="grid gap-2 p-4 sm:grid-cols-[11rem_minmax(0,1fr)]">
+                                        <dt class="break-words text-sm text-slate-500">{{ $field['label'] }}</dt>
+                                        <dd class="whitespace-pre-line break-words text-sm font-semibold text-slate-900">{{ filled($field['value']) ? $field['value'] : '—' }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </div>
+                    @endif
+
+                    <p class="text-xs leading-5 text-slate-500">Data di atas mengikuti kondisi aset saat halaman dibuka, bukan salinan historis pada waktu laporan diproses.</p>
+                </div>
+
                 <div class="mt-6 rounded-lg bg-slate-50 p-4 text-sm">
                     <strong class="text-slate-900">Diproses oleh {{ $report->reviewer?->name ?? 'Admin' }}</strong>
                     <p class="mt-2 text-slate-600">{{ $report->admin_note ?: 'Tanpa catatan.' }}</p>
@@ -181,14 +252,16 @@
         </section>
 
         @if ($report->status === 'pending')
-            <form class="rounded-xl border border-red-200 bg-red-50/60 p-5 shadow-sm sm:p-6" method="POST" action="{{ route('admin.reports.reject', $report) }}">
+            <form class="rounded-xl border border-red-200 bg-red-50/60 p-5 shadow-sm sm:p-6" method="POST" action="{{ route('admin.reports.reject', $report) }}"
+                data-confirm="Usulan perubahan pada laporan ini tidak akan diterapkan. Pastikan alasan penolakan sudah diisi dengan jelas."
+                data-confirm-title="Tolak laporan perubahan?" data-confirm-label="Ya, tolak laporan" data-confirm-tone="danger">
                 @csrf
                 @method('PATCH')
                 <label class="grid gap-2 text-sm font-semibold text-slate-700">
                     <span>Alasan penolakan <span class="text-red-500">*</span></span>
                     <textarea class="min-h-24 rounded-lg border border-red-200 bg-white p-3 font-normal focus:border-red-600 focus:outline-none focus:ring-4 focus:ring-red-100" name="admin_note" required placeholder="Jelaskan alasan laporan ditolak"></textarea>
                 </label>
-                <button class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-300 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-100" type="submit" data-confirm="Tolak laporan ini?">
+                <button class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-300 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-100" type="submit">
                     Tolak laporan
                 </button>
             </form>

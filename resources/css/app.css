@@ -56,3 +56,51 @@
         transition: none;
     }
 }
+
+/* Konfirmasi aksi admin, menggunakan dialog khusus alih-alih confirm browser. */
+html.has-confirmation-modal { overflow: hidden; }
+.confirmation-dialog {
+    position: fixed;
+    inset: 0;
+    width: min(30rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.25rem;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 24px 80px rgb(15 23 42 / 24%);
+}
+.confirmation-dialog::backdrop {
+    background: rgb(15 23 42 / 55%);
+    backdrop-filter: blur(4px);
+}
+.confirmation-dialog[open] { animation: confirmation-in 160ms ease-out; }
+.confirmation-card { padding: 1.75rem; }
+.confirmation-topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.confirmation-icon { display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 1rem; background: #fef2f2; color: #dc2626; }
+.confirmation-dismiss { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: .75rem; background: #f8fafc; color: #64748b; cursor: pointer; }
+.confirmation-dismiss:hover { background: #e2e8f0; }
+.confirmation-eyebrow { margin-top: 1.25rem; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #64748b; }
+.confirmation-title { margin-top: .5rem; font-size: 1.375rem; line-height: 1.35; font-weight: 700; overflow-wrap: anywhere; }
+.confirmation-description { margin-top: .75rem; font-size: .875rem; line-height: 1.75; color: #64748b; white-space: pre-line; overflow-wrap: anywhere; }
+.confirmation-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid #e2e8f0; }
+.confirmation-button { min-height: 2.75rem; padding: .75rem 1rem; border-radius: .75rem; font-size: .875rem; font-weight: 600; cursor: pointer; }
+.confirmation-button-cancel { border: 1px solid #cbd5e1; background: #fff; color: #334155; }
+.confirmation-button-cancel:hover { background: #f8fafc; }
+.confirmation-button-submit { border: 1px solid transparent; background: #dc2626; color: #fff; }
+.confirmation-button-submit:hover { background: #b91c1c; }
+.confirmation-dialog[data-tone="success"] .confirmation-icon { background: #ecfdf5; color: #059669; }
+.confirmation-dialog[data-tone="success"] .confirmation-button-submit { background: #059669; }
+.confirmation-dialog[data-tone="success"] .confirmation-button-submit:hover { background: #047857; }
+.confirmation-dialog button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.confirmation-dialog button:disabled { cursor: wait; opacity: .6; }
+@keyframes confirmation-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 30rem) {
+    .confirmation-card { padding: 1.25rem; }
+    .confirmation-actions { flex-direction: column-reverse; }
+    .confirmation-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .confirmation-dialog[open] { animation: none; } }
